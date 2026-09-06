@@ -21,6 +21,7 @@ const promptMocks = vi.hoisted(() => ({
   confirm: vi.fn(),
   path: vi.fn(),
   select: vi.fn(),
+  text: vi.fn(),
 }));
 
 vi.mock("@clack/prompts", () => ({
@@ -36,13 +37,14 @@ describe("initial CLI storage setup", () => {
     promptMocks.confirm.mockReset();
     promptMocks.path.mockReset();
     promptMocks.select.mockReset();
+    promptMocks.text.mockReset();
     await Promise.all(directories.splice(0).map(removeTemporaryDirectory));
   });
 
   it("writes default config.json and links.json with portable settings", async () => {
     const homeDirectory = await createHomeDirectory(directories);
     const defaults = resolveDefaultStoragePaths(homeDirectory);
-    promptMocks.path
+    promptMocks.text
       .mockResolvedValueOnce(defaults.configFilePath)
       .mockResolvedValueOnce(defaults.linksFilePath);
     const cliOutput = createOutput();
@@ -74,13 +76,18 @@ describe("initial CLI storage setup", () => {
       schemaVersion: 1,
       links: [],
     });
-    expect(promptMocks.path).toHaveBeenCalledTimes(2);
-    const configPrompt = promptMocks.path.mock.calls[0]?.[0] as {
+    expect(promptMocks.text).toHaveBeenCalledTimes(2);
+    expect(promptMocks.path).not.toHaveBeenCalled();
+    const configPrompt = promptMocks.text.mock.calls[0]?.[0] as {
+      readonly initialValue: string;
       readonly validate: (value: string) => string | undefined;
     };
-    const linksPrompt = promptMocks.path.mock.calls[1]?.[0] as {
+    const linksPrompt = promptMocks.text.mock.calls[1]?.[0] as {
+      readonly initialValue: string;
       readonly validate: (value: string) => string | undefined;
     };
+    expect(configPrompt.initialValue).toBe(defaults.configFilePath);
+    expect(linksPrompt.initialValue).toBe(defaults.linksFilePath);
     expect(configPrompt.validate("settings.txt")).toBe(
       "Choose a file ending in .json.",
     );
@@ -101,7 +108,7 @@ describe("initial CLI storage setup", () => {
     const customDirectory = join(homeDirectory, "custom-storage");
     const customConfigPath = join(customDirectory, "config.json");
     const customLinksPath = join(customDirectory, "links.json");
-    promptMocks.path
+    promptMocks.text
       .mockResolvedValueOnce(customConfigPath)
       .mockResolvedValueOnce(customLinksPath);
 
@@ -119,7 +126,7 @@ describe("initial CLI storage setup", () => {
       schemaVersion: 1,
       configFile: resolve(customConfigPath),
     });
-    promptMocks.path.mockClear();
+    promptMocks.text.mockClear();
     const rediscoveredOutput = createOutput();
     await withTerminalMode(false, () =>
       createProgram(
@@ -129,7 +136,7 @@ describe("initial CLI storage setup", () => {
     );
 
     expect(rediscoveredOutput.messages).toEqual([resolve(customLinksPath)]);
-    expect(promptMocks.path).not.toHaveBeenCalled();
+    expect(promptMocks.text).not.toHaveBeenCalled();
     await expect(access(customConfigPath)).resolves.toBeUndefined();
     await expect(access(customLinksPath)).resolves.toBeUndefined();
   });
@@ -137,7 +144,7 @@ describe("initial CLI storage setup", () => {
   it("writes no storage files when initial setup is cancelled", async () => {
     const homeDirectory = await createHomeDirectory(directories);
     const defaults = resolveDefaultStoragePaths(homeDirectory);
-    promptMocks.path
+    promptMocks.text
       .mockResolvedValueOnce(defaults.configFilePath)
       .mockResolvedValueOnce(Symbol("cancelled"));
     const cliOutput = createOutput();
@@ -148,7 +155,7 @@ describe("initial CLI storage setup", () => {
       ),
     );
 
-    expect(promptMocks.path).toHaveBeenCalledTimes(2);
+    expect(promptMocks.text).toHaveBeenCalledTimes(2);
     expect(promptMocks.cancel).toHaveBeenCalledExactlyOnceWith(
       "Initial setup cancelled.",
     );
@@ -159,7 +166,7 @@ describe("initial CLI storage setup", () => {
   it("writes no storage files when setup is cancelled at the first path", async () => {
     const homeDirectory = await createHomeDirectory(directories);
     const defaults = resolveDefaultStoragePaths(homeDirectory);
-    promptMocks.path.mockResolvedValueOnce(Symbol("cancelled"));
+    promptMocks.text.mockResolvedValueOnce(Symbol("cancelled"));
 
     await withTerminalMode(true, () =>
       createProgram(
@@ -168,7 +175,7 @@ describe("initial CLI storage setup", () => {
       ).parseAsync(["node", "skillslink", "where"]),
     );
 
-    expect(promptMocks.path).toHaveBeenCalledOnce();
+    expect(promptMocks.text).toHaveBeenCalledOnce();
     expect(promptMocks.cancel).toHaveBeenCalledExactlyOnceWith(
       "Initial setup cancelled.",
     );
@@ -318,6 +325,7 @@ function createOutput(): {
 
 function expectNoPromptCalls(): void {
   expect(promptMocks.path).not.toHaveBeenCalled();
+  expect(promptMocks.text).not.toHaveBeenCalled();
   expect(promptMocks.confirm).not.toHaveBeenCalled();
   expect(promptMocks.select).not.toHaveBeenCalled();
   expect(promptMocks.cancel).not.toHaveBeenCalled();

@@ -21,6 +21,7 @@ const promptMocks = vi.hoisted(() => ({
   confirm: vi.fn(),
   path: vi.fn(),
   select: vi.fn(),
+  text: vi.fn(),
 }));
 
 vi.mock("@clack/prompts", () => ({
@@ -36,6 +37,7 @@ describe("public CLI command surface", () => {
     promptMocks.confirm.mockReset();
     promptMocks.path.mockReset();
     promptMocks.select.mockReset();
+    promptMocks.text.mockReset();
     await Promise.all(directories.splice(0).map(removeTemporaryDirectory));
   });
 

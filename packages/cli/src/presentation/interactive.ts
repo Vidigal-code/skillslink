@@ -1,6 +1,13 @@
 import { dirname, extname, join, resolve } from "node:path";
 
-import { cancel, confirm, isCancel, path, select } from "@clack/prompts";
+import {
+  cancel,
+  confirm,
+  isCancel,
+  path,
+  select,
+  text as textPrompt,
+} from "@clack/prompts";
 
 import {
   createRegisteredLinkTargets,
@@ -64,10 +71,8 @@ export async function resolveInteractiveCommand(): Promise<
 export async function resolveInitialStoragePaths(
   defaults: InitialStoragePaths,
 ): Promise<InitialStoragePaths | undefined> {
-  const configResult = await path({
+  const configResult = await textPrompt({
     message: "Where should SkillsLink save config.json?",
-    root: dirname(defaults.configFilePath),
-    directory: false,
     initialValue: defaults.configFilePath,
     validate: validateJsonFilePath,
   });
@@ -84,10 +89,8 @@ export async function resolveInitialStoragePaths(
     configFilePath === resolve(defaults.configFilePath)
       ? defaults.linksFilePath
       : join(dirname(configFilePath), "links.json");
-  const linksResult = await path({
+  const linksResult = await textPrompt({
     message: "Where should SkillsLink save links.json?",
-    root: dirname(suggestedLinksPath),
-    directory: false,
     initialValue: suggestedLinksPath,
     validate(value) {
       const formatError = validateJsonFilePath(value);
