@@ -1,0 +1,58 @@
+{
+  "name": "@vidigal-code/skillslink",
+  "version": "0.1.0",
+  "description": "Generate self-contained URLs and divided links from local Markdown files.",
+  "keywords": [
+    "markdown",
+    "base64url",
+    "url",
+    "ai",
+    "cli"
+  ],
+  "homepage": "https://vidigal-code.github.io/skillslink/",
+  "bugs": {
+    "url": "https://github.com/Vidigal-code/skillslink/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vidigal-code/skillslink.git"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "Kauan Vidigal",
+    "email": "kauanvidigalcontato@gmail.com"
+  },
+  "type": "module",
+  "bin": {
+    "skillslink": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=22.14.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "scripts": {
+    "build": "tsup src/cli.ts --format esm --platform node --target node22 --clean --minify",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@clack/prompts": "^1.7.0",
+    "commander": "^15.0.0",
+    "env-paths": "^4.0.0",
+    "zod": "^4.5.4"
+  },
+  "devDependencies": {
+    "@skillslink/link-format": "0.1.0",
+    "@types/node": "^22.19.0",
+    "tsup": "^8.5.1",
+    "vitest": "^5.0.0"
+  }
+}

@@ -1,0 +1,181 @@
+{
+  "meta": {
+    "siteDescription": "Convierte archivos Markdown en URL autónomas y editables, con enlaces compactos divididos en partes.",
+    "homeTitle": "Enlaces portátiles de documentos",
+    "aboutTitle": "Acerca de",
+    "aboutDescription": "Descubre cómo SkillsLink crea enlaces portátiles y páginas estáticas para documentos legibles por IA.",
+    "uploadTitle": "Generar enlace de documento",
+    "uploadDescription": "Lee un archivo Markdown localmente en el navegador y crea URL autónomas para el documento y sus partes.",
+    "viewTitle": "Visor de documentos",
+    "viewDescription": "Recupera, lee, edita y comparte un documento almacenado en su propia URL."
+  },
+  "menu": {
+    "navigation": "Navegación principal",
+    "home": "Inicio",
+    "about": "Acerca de",
+    "upload": "Generar enlace",
+    "github": "GitHub",
+    "language": "Idioma",
+    "pt": "Portugués",
+    "en": "Inglés",
+    "es": "Español"
+  },
+  "common": {
+    "copy": "Copiar",
+    "copied": "Copiado",
+    "copyError": "No se pudo copiar al portapapeles.",
+    "markdown": "Markdown"
+  },
+  "theme": {
+    "toggle": "Cambiar tema de color"
+  },
+  "home": {
+    "eyebrow": "Markdown → URL → lector",
+    "titleLead": "Tu texto, transportado por",
+    "titleAccent": "un enlace portátil.",
+    "lead": "Lee un archivo .md localmente, empaquétalo como datos Base64URL compactos y opcionalmente comprimidos, abre el visor y, si quieres, guarda la jerarquía de enlaces en tu registro JSON privado.",
+    "copyInstall": "Copiar comando de instalación",
+    "terminalLabel": "Ejemplo de generación de enlace en la terminal",
+    "terminalGenerated": "URL autónoma generada",
+    "terminalOpened": "visor abierto en el navegador",
+    "terminalPrompt": "confirmación opcional del registro",
+    "terminalReady": "listo para copiar y editar",
+    "proofLocalTitle": "Local por diseño",
+    "proofLocalText": "Sin carga, token ni cuenta",
+    "proofSafeTitle": "Entrada validada",
+    "proofSafeText": "Archivos .md UTF-8 de hasta {limit}",
+    "proofRegistryTitle": "Registro portátil",
+    "proofRegistryText": "JSON de usuario o ruta personalizada",
+    "resilienceEyebrow": "Dos modos de lectura",
+    "resilienceTitle": "URL portátiles y páginas estáticas del repositorio.",
+    "resilienceLead": "Los enlaces generados conservan el documento en la URL y lo recuperan en el navegador. Los documentos incluidos en este repositorio también reciben HTML prerenderizado y rutas de archivo sin formato para lectores HTTP simples.",
+    "features": [
+      {
+        "title": "URL autónoma",
+        "text": "El fragmento versionado de la URL transporta el documento validado, por lo que el enlace se abre sin guardar el archivo en un servidor ni enviar el contenido en la solicitud HTTP."
+      },
+      {
+        "title": "Visor editable",
+        "text": "Cambia el nombre o el contenido en el visor y SkillsLink crea inmediatamente una URL actualizada para copiar."
+      },
+      {
+        "title": "Ruta estática para IA",
+        "text": "Las instantáneas del repositorio se exportan como HTML completo y archivos exactos, legibles sin JavaScript en el cliente."
+      }
+    ],
+    "flowEyebrow": "Flujo local",
+    "flowTitle": "Del archivo a la URL en tres pasos.",
+    "steps": [
+      {
+        "title": "Elige un archivo",
+        "text": "Usa la CLI o la página del navegador con un archivo .md UTF-8 de hasta {limit}."
+      },
+      {
+        "title": "Genera y abre",
+        "text": "SkillsLink valida el origen, incorpora el contenido en la URL, imprime el enlace y abre el visor cuando la terminal es interactiva."
+      },
+      {
+        "title": "Regístralo si te sirve",
+        "text": "Confirma la pregunta opcional para guardar el enlace generado en el registro JSON del usuario y después listarlo o eliminarlo."
+      }
+    ],
+    "calloutTitle": "Un documento pequeño merece un enlace simple.",
+    "calloutText": "Ejecuta con npx o instala globalmente. El comando lee localmente y nunca solicita un token de GitHub.",
+    "copyCommand": "Copiar comando de generación"
+  },
+  "about": {
+    "eyebrow": "Cómo funciona",
+    "title": "Un formato pequeño y verificable para enlaces de documentos.",
+    "lead": "SkillsLink empaqueta un documento Markdown validado en un sobre compacto y versionado, usa zlib cuando reduce los bytes, lo codifica como Base64URL y lo incluye en la URL del visor.",
+    "sections": [
+      {
+        "title": "Payload versionado",
+        "text": "La URL transporta el nombre y contenido Markdown sin metadatos de medio redundantes. Un prefijo mantiene legibles los enlaces antiguos, mientras el formato actual elige bytes comprimidos o sin comprimir para obtener el resultado más corto."
+      },
+      {
+        "title": "Instantáneas estáticas",
+        "text": "Los documentos añadidos al repositorio se exportan como HTML completo y archivos .md exactos durante el build de GitHub Pages."
+      },
+      {
+        "title": "Control local",
+        "text": "El registro de la CLI vive en el directorio de datos del usuario del sistema operativo o en una ruta JSON elegida por configuración u opción."
+      }
+    ],
+    "guaranteeTitle": "Lo que SkillsLink verifica",
+    "guaranteeText": "El códec valida extensión, tipo de medio, texto UTF-8, nombre, versión y límite de {limit}. El build del repositorio también valida y renderiza cada instantánea guardada.",
+    "limitationTitle": "Lo que un sitio no puede garantizar",
+    "limitationText": "El visor portátil necesita JavaScript para decodificar el fragmento de la URL. Un servicio de IA puede desactivar JavaScript, bloquear GitHub Pages o rechazar URL largas. Para una lectura HTTP fiable, usa un documento estático incluido en el repositorio o su ruta sin formato.",
+    "repositoryTitle": "Abierto a nuevos idiomas",
+    "repositoryText": "Los diccionarios de traducción viven en el repositorio bajo un contrato TypeScript estricto. Un colaborador puede añadir y revisar un idioma junto al código fuente.",
+    "repositoryAction": "Contribuir en GitHub"
+  },
+  "upload": {
+    "eyebrow": "Herramienta local del navegador",
+    "title": "Convierte un documento en un enlace editable.",
+    "lead": "Elige un archivo Markdown. SkillsLink lo lee solo en este navegador y genera enlaces portátiles compactos para el documento completo y todas sus partes semánticas.",
+    "limitTitle": "Límite de tamaño del documento: {limit}",
+    "limitText": "Los archivos de más de {limit} se bloquean antes de leerlos o codificarlos. Cada parte generada está limitada a {partLimit}. Los contenidos permanecen en los fragmentos de las URL y fuera de las solicitudes HTTP, lo que evita que estos datos causen respuestas HTTP 431.",
+    "fileLabel": "Documento",
+    "fileHint": "Solo .md UTF-8, hasta {limit}.",
+    "generateAction": "Generar enlace",
+    "workingAction": "Leyendo documento…",
+    "portableWarning": "La compresión y Base64URL no son cifrado. Cualquiera que tenga el enlace completo puede leer el documento. El fragmento no se incluye en la solicitud HTTP, pero puede permanecer en el historial del navegador o quedar expuesto al copiar el enlace. El visor necesita JavaScript; los clientes sin JavaScript deben usar una instantánea del repositorio o una URL de archivo sin formato.",
+    "resultTitle": "Enlaces del documento",
+    "viewerUrlLabel": "URL del visor",
+    "copyViewerUrl": "Copiar URL del visor",
+    "openViewer": "Abrir visor",
+    "fullLinkHiddenTitle": "El enlace completo supera el límite de compatibilidad",
+    "fullLinkHiddenText": "SkillsLink generó el enlace completo, pero no lo muestra porque supera los {urlLimit} caracteres. Usa los enlaces de partes ordenados que aparecen abajo; juntos conservan el archivo Markdown completo.",
+    "partLinksTitle": "Enlaces del Markdown dividido",
+    "partLinksText": "Cada enlace transporta una pequeña parte semántica. Léelos en orden para recuperar la skill completa.",
+    "partLinkLabel": "URL del visor de la parte",
+    "partLabel": "PARTE",
+    "partSize": "{bytes} bytes",
+    "copyPartUrl": "Copiar URL de la parte",
+    "openPart": "Abrir parte",
+    "aiPromptTitle": "Prompt para IA listo para copiar",
+    "aiPromptText": "Este prompt en inglés contiene todos los enlaces divididos en orden y es idéntico en los tres idiomas del sitio.",
+    "aiPromptLabel": "Prompt con los enlaces generados",
+    "copyAiPrompt": "Copiar prompt para IA",
+    "splittingTitle": "Cómo funciona la división automática",
+    "splittingText": "SkillsLink siempre crea la URL completa cuando cabe en el límite de compatibilidad. Un analizador compartido de CommonMark y GFM divide encabezados, párrafos, bloques de código, elementos de lista, citas, tablas y otros bloques Markdown. Todo lo que supere {partLimit} se divide de nuevo en límites de texto seguros.",
+    "skillTipsTitle": "Consejos para un archivo de skill de IA",
+    "skillTips": [
+      "Usa un encabezado # para el nombre y el propósito de la skill.",
+      "Separa activadores, flujo, salida y ejemplos con encabezados ## y ### específicos.",
+      "Mantén párrafos, bloques de código y elementos de lista por debajo de {partLimit}; mueve ejemplos o referencias largas a otro archivo .md.",
+      "Excluye registros generados, datos binarios, Base64 incorporado, credenciales y secretos."
+    ],
+    "errors": {
+      "fileRequired": "Elige un archivo .md.",
+      "fileTooLarge": "Este archivo es demasiado grande. Elige un archivo .md de hasta {limit}.",
+      "invalidFile": "Usa un archivo .md UTF-8 válido de hasta {limit}.",
+      "unexpected": "No se pudo preparar el documento. Inténtalo de nuevo."
+    }
+  },
+  "document": {
+    "publishedOn": "Añadido el",
+    "identifier": "ID",
+    "actionsLabel": "Acciones del documento",
+    "copyFullUrl": "Copiar URL actual",
+    "openRaw": "Abrir documento sin formato",
+    "machineNote": "Este documento del repositorio está presente en el HTML exportado y también está disponible como archivo exacto. Al editarlo se crea una nueva URL portátil.",
+    "repositoryLabel": "Instantánea del repositorio",
+    "recoveredLabel": "Recuperado de la URL",
+    "loadingTitle": "Leyendo la URL…",
+    "loadingText": "Comprobando si el fragmento de la URL contiene un documento incorporado válido.",
+    "missingTitle": "Documento no encontrado",
+    "missingText": "Esta URL no contiene un documento Markdown válido.",
+    "backHome": "Volver al inicio",
+    "editAction": "Editar documento",
+    "closeEditor": "Cerrar editor",
+    "editorTitle": "Editar y actualizar la URL",
+    "nameLabel": "Nombre del archivo",
+    "contentLabel": "Contenido",
+    "updateUrl": "Actualizar URL",
+    "updatedNotice": "La barra de direcciones y la acción de copiar ahora usan la URL actualizada del documento.",
+    "byteCount": "{current} de {maximum} bytes",
+    "validationError": "Mantén un nombre .md válido y contenido dentro del límite de {limit}."
+  },
+  "footer": "SkillsLink · MIT · Hecho para Markdown y enlaces portátiles."
+}

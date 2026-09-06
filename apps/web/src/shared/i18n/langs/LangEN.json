@@ -1,0 +1,181 @@
+{
+  "meta": {
+    "siteDescription": "Turn Markdown files into self-contained, editable URLs and compact divided links.",
+    "homeTitle": "Portable document links",
+    "aboutTitle": "About",
+    "aboutDescription": "Learn how SkillsLink creates portable links and static pages for AI-readable documents.",
+    "uploadTitle": "Generate a document link",
+    "uploadDescription": "Read a local Markdown file in the browser and create self-contained document and divided-part URLs.",
+    "viewTitle": "Document viewer",
+    "viewDescription": "Recover, read, edit, and share a document stored inside its URL."
+  },
+  "menu": {
+    "navigation": "Primary navigation",
+    "home": "Home",
+    "about": "About",
+    "upload": "Generate link",
+    "github": "GitHub",
+    "language": "Language",
+    "pt": "Portuguese",
+    "en": "English",
+    "es": "Spanish"
+  },
+  "common": {
+    "copy": "Copy",
+    "copied": "Copied",
+    "copyError": "Could not copy to the clipboard.",
+    "markdown": "Markdown"
+  },
+  "theme": {
+    "toggle": "Toggle color theme"
+  },
+  "home": {
+    "eyebrow": "Markdown → URL → reader",
+    "titleLead": "Your text, carried by",
+    "titleAccent": "one portable link.",
+    "lead": "Read a .md file locally, pack it into compact optionally compressed Base64URL data, open the viewer, and optionally keep the link hierarchy in your private JSON registry.",
+    "copyInstall": "Copy install command",
+    "terminalLabel": "Terminal link-generation example",
+    "terminalGenerated": "self-contained URL generated",
+    "terminalOpened": "viewer opened in the browser",
+    "terminalPrompt": "optional registry confirmation",
+    "terminalReady": "ready to copy and edit",
+    "proofLocalTitle": "Local by design",
+    "proofLocalText": "No upload, token, or account",
+    "proofSafeTitle": "Validated input",
+    "proofSafeText": "UTF-8 .md files up to {limit}",
+    "proofRegistryTitle": "Portable registry",
+    "proofRegistryText": "User-level JSON or a custom path",
+    "resilienceEyebrow": "Two reading modes",
+    "resilienceTitle": "Portable URLs and static repository pages.",
+    "resilienceLead": "Generated links keep the document in the URL and recover it in the browser. Documents committed to this repository also receive pre-rendered HTML and raw-file routes for plain HTTP readers.",
+    "features": [
+      {
+        "title": "Self-contained URL",
+        "text": "The versioned URL fragment carries the validated document, so the link can be opened without storing the file on a server or sending its payload in the HTTP request."
+      },
+      {
+        "title": "Editable viewer",
+        "text": "Change the file name or content in the viewer and SkillsLink immediately creates an updated URL for copying."
+      },
+      {
+        "title": "Static AI route",
+        "text": "Repository snapshots are exported as complete HTML and exact raw files, which makes them readable without client-side JavaScript."
+      }
+    ],
+    "flowEyebrow": "Local workflow",
+    "flowTitle": "From a file to a URL in three steps.",
+    "steps": [
+      {
+        "title": "Choose a file",
+        "text": "Use the CLI or browser page with a UTF-8 .md file no larger than {limit}."
+      },
+      {
+        "title": "Generate and open",
+        "text": "SkillsLink validates the source, embeds it in the URL, prints the link, and opens the viewer when the terminal is interactive."
+      },
+      {
+        "title": "Register if useful",
+        "text": "Confirm the optional prompt to keep the generated link in your user-level JSON registry for listing or removal later."
+      }
+    ],
+    "calloutTitle": "A small document deserves a simple link.",
+    "calloutText": "Run with npx or install globally. The command reads locally and never asks for a GitHub token.",
+    "copyCommand": "Copy generate command"
+  },
+  "about": {
+    "eyebrow": "How it works",
+    "title": "A small, inspectable format for document links.",
+    "lead": "SkillsLink packs a validated Markdown document into a compact versioned envelope, uses zlib when it produces fewer bytes, encodes it as Base64URL, and places it in the viewer URL.",
+    "sections": [
+      {
+        "title": "Versioned payload",
+        "text": "The URL carries the Markdown name and content without redundant media metadata. A version prefix keeps older links readable while the current format selects compressed or raw bytes for the shorter result."
+      },
+      {
+        "title": "Static snapshots",
+        "text": "Documents added to the repository are exported as content-complete HTML and exact .md files during the GitHub Pages build."
+      },
+      {
+        "title": "Local ownership",
+        "text": "The CLI registry lives in the operating system user-data directory or at a JSON path selected with configuration or an option."
+      }
+    ],
+    "guaranteeTitle": "What SkillsLink verifies",
+    "guaranteeText": "The codec validates the extension, media type, UTF-8 text, name, version, and {limit} limit. Repository builds also verify and render every stored snapshot.",
+    "limitationTitle": "What a website cannot guarantee",
+    "limitationText": "The portable viewer needs JavaScript to decode its URL fragment. An AI service may disable JavaScript, block GitHub Pages, or reject long URLs. For dependable plain HTTP reading, use a committed static document or its raw route.",
+    "repositoryTitle": "Open to new languages",
+    "repositoryText": "Translation dictionaries live in the repository under a strict shared TypeScript contract. A contributor can add and review a language alongside the source.",
+    "repositoryAction": "Contribute on GitHub"
+  },
+  "upload": {
+    "eyebrow": "Local browser tool",
+    "title": "Turn a document into an editable link.",
+    "lead": "Choose a Markdown file. SkillsLink reads it only in this browser and generates compact portable links for the complete document and all of its semantic parts.",
+    "limitTitle": "Document size limit: {limit}",
+    "limitText": "Files larger than {limit} are blocked before they are read or encoded. Each generated part is limited to {partLimit}. Payloads stay in URL fragments and outside HTTP requests, preventing this document data from causing HTTP 431 responses.",
+    "fileLabel": "Document",
+    "fileHint": "UTF-8 .md only, up to {limit}.",
+    "generateAction": "Generate link",
+    "workingAction": "Reading document…",
+    "portableWarning": "Compression and Base64URL are not encryption. Anyone with the complete link can read the document. Its fragment stays out of the HTTP request but can remain in browser history or be exposed when the link is copied. The viewer needs JavaScript; non-JavaScript clients should use a repository snapshot or raw-file URL.",
+    "resultTitle": "Your document links",
+    "viewerUrlLabel": "Viewer URL",
+    "copyViewerUrl": "Copy viewer URL",
+    "openViewer": "Open viewer",
+    "fullLinkHiddenTitle": "The complete link exceeds the compatibility limit",
+    "fullLinkHiddenText": "SkillsLink generated the complete link but does not display it because it exceeds {urlLimit} characters. Use the ordered part links below; together they preserve the complete Markdown file.",
+    "partLinksTitle": "Divided Markdown links",
+    "partLinksText": "Every link carries one small semantic part. Read them in order to recover the complete skill.",
+    "partLinkLabel": "Part viewer URL",
+    "partLabel": "PART",
+    "partSize": "{bytes} bytes",
+    "copyPartUrl": "Copy part URL",
+    "openPart": "Open part",
+    "aiPromptTitle": "Ready-to-copy AI prompt",
+    "aiPromptText": "This English prompt contains every divided link in order and is identical in all three site languages.",
+    "aiPromptLabel": "Prompt with generated links",
+    "copyAiPrompt": "Copy AI prompt",
+    "splittingTitle": "How automatic splitting works",
+    "splittingText": "SkillsLink always creates the complete URL when it fits the compatibility limit. A shared CommonMark and GFM parser divides headings, paragraphs, fenced code blocks, list items, quotes, tables, and other Markdown blocks. Anything above {partLimit} is divided again at safe text boundaries.",
+    "skillTipsTitle": "Tips for an AI skill file",
+    "skillTips": [
+      "Use one # heading for the skill name and purpose.",
+      "Separate triggers, workflow, output, and examples with focused ## and ### headings.",
+      "Keep paragraphs, code blocks, and list items below {partLimit}; move long examples or references into another .md file.",
+      "Exclude generated logs, binary data, embedded Base64, credentials, and secrets."
+    ],
+    "errors": {
+      "fileRequired": "Choose a .md file.",
+      "fileTooLarge": "This file is too large. Choose a .md file no larger than {limit}.",
+      "invalidFile": "Use a valid UTF-8 .md file no larger than {limit}.",
+      "unexpected": "The document could not be prepared. Try again."
+    }
+  },
+  "document": {
+    "publishedOn": "Added on",
+    "identifier": "ID",
+    "actionsLabel": "Document actions",
+    "copyFullUrl": "Copy current URL",
+    "openRaw": "Open raw document",
+    "machineNote": "This repository document is present in the exported HTML and is also available as an exact raw file. Editing it creates a new portable URL.",
+    "repositoryLabel": "Repository snapshot",
+    "recoveredLabel": "Recovered from the URL",
+    "loadingTitle": "Reading the URL…",
+    "loadingText": "Checking the URL fragment for a valid embedded document.",
+    "missingTitle": "Document not found",
+    "missingText": "This URL does not contain a valid Markdown document.",
+    "backHome": "Back to home",
+    "editAction": "Edit document",
+    "closeEditor": "Close editor",
+    "editorTitle": "Edit and update the URL",
+    "nameLabel": "File name",
+    "contentLabel": "Content",
+    "updateUrl": "Update URL",
+    "updatedNotice": "The address bar and copy action now use the updated document URL.",
+    "byteCount": "{current} of {maximum} bytes",
+    "validationError": "Keep a valid .md name and content within the {limit} limit."
+  },
+  "footer": "SkillsLink · MIT · Built for Markdown and portable links."
+}

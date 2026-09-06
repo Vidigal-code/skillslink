@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "id": "75c564ea51496dd3",
+  "publishedAt": "2026-09-06T00:00:00.000Z",
+  "document": {
+    "name": "ai-readable.md",
+    "mediaType": "text/markdown",
+    "content": "# SkillsLink AI-readable example\n\nThis repository snapshot demonstrates the HTTP-friendly form of a SkillsLink document.\n\n## Available representations\n\n- The document route contains this complete text in pre-rendered HTML.\n- The raw link serves the exact Markdown source.\n- The page can create a self-contained Base64URL link for editing and sharing.\n\n## Guidance for AI readers\n\nOpen the document URL first. If your environment exposes linked resources, the raw Markdown URL is also available on the page and in `llms.txt`.\n\n> External services may restrict network access, JavaScript, domains, or long URLs. SkillsLink can provide readable formats, but it cannot override another service's access policy.\n"
+  }
+}

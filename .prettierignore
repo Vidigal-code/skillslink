@@ -1,0 +1,8 @@
+node_modules
+dist
+out
+.next
+coverage
+package-lock.json
+apps/web/public/raw
+apps/web/public/llms.txt

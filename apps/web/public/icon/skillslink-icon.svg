@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" fill="none" role="img" aria-labelledby="skillslink-title skillslink-desc">
+  <title id="skillslink-title">SkillsLink</title>
+  <desc id="skillslink-desc">Violet SkillsLink robot with interlocking links on its display.</desc>
+  <defs>
+    <linearGradient id="skillslink-shell" x1="46" y1="72" x2="207" y2="218" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#A78BFA"/>
+      <stop offset=".48" stop-color="#7C5CF4"/>
+      <stop offset="1" stop-color="#5365ED"/>
+    </linearGradient>
+    <linearGradient id="skillslink-visor" x1="72" y1="86" x2="177" y2="196" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#232241"/>
+      <stop offset="1" stop-color="#111329"/>
+    </linearGradient>
+  </defs>
+  <path d="M128 45V76" stroke="#9B7BF8" stroke-width="14" stroke-linecap="round"/>
+  <circle cx="128" cy="33" r="15" fill="#A78BFA"/>
+  <circle cx="128" cy="33" r="6" fill="#E9DDFF"/>
+  <rect x="17" y="118" width="30" height="54" rx="13" fill="#8B6CF1"/>
+  <rect x="209" y="118" width="30" height="54" rx="13" fill="#5A6CEC"/>
+  <rect x="37" y="68" width="182" height="151" rx="46" fill="url(#skillslink-shell)"/>
+  <rect x="52" y="83" width="152" height="118" rx="33" fill="url(#skillslink-visor)"/>
+  <g transform="translate(128 128) rotate(45) scale(4.25) translate(-12 -12)" stroke-width="2.45" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" stroke="#59E4EB"/>
+    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke="#C7B6FF"/>
+  </g>
+  <path d="M111 172Q128 185 145 172" stroke="#7DE6ED" stroke-width="7" stroke-linecap="round"/>
+</svg>

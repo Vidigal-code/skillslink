@@ -1,0 +1,31 @@
+{
+  "name": "@skillslink/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "npm run prepare-content && next build --webpack && node scripts/verify-export.mjs",
+    "dev": "npm run prepare-content && next dev --webpack",
+    "prepare-content": "tsx scripts/prepare-content.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@skillslink/link-format": "0.1.0",
+    "geist": "^1.7.2",
+    "lucide-react": "^1.41.0",
+    "next": "^16.3.4",
+    "next-yak": "^9.7.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.0",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.7",
+    "tsx": "^4.23.13",
+    "vitest": "^5.0.0"
+  }
+}
