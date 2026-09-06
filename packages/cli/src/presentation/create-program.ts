@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import {
   createAiLearningPrompt,
   isRecommendedPortableUrl,
+  LinkFormatError,
   normalizeSiteUrl,
   PORTABLE_LINK_DISPLAY_MODES,
   type PortableLinkDisplayMode,
@@ -22,16 +23,11 @@ import type {
   IdentifierGenerator,
 } from "../application/ports";
 import { removeGeneratedLink } from "../application/remove-generated-link";
-import {
-  resolveDefaultSettings,
-  resolveRegistryPath,
-} from "../config/runtime-config";
 import { CliError } from "../domain/cli-error";
 import type {
   RegisteredLinkTarget,
   RegistrySettings,
 } from "../domain/registry";
-import { JsonRegistry } from "../infrastructure/json-registry";
 import {
   DestinationExistsError,
   NodeDocumentWriter,
@@ -49,6 +45,11 @@ import {
   resolveSourcePath,
 } from "./interactive";
 import {
+  createStorageSession,
+  type StorageRuntime,
+  type StorageSession,
+} from "./create-storage-session";
+import {
   formatGeneratedLink,
   formatLinkList,
   standardOutput,
@@ -56,6 +57,7 @@ import {
 } from "./output";
 
 interface GlobalOptions {
+  readonly config?: string;
   readonly store?: string;
 }
 
@@ -95,6 +97,7 @@ export interface ProgramServices {
   readonly documentWriter: DocumentDestinationWriter;
   readonly openUrl: (url: string) => Promise<void>;
   readonly copyText: (value: string) => Promise<void>;
+  readonly storageRuntime?: StorageRuntime;
 }
 
 export function createProgram(
@@ -102,16 +105,33 @@ export function createProgram(
   services: ProgramServices = createDefaultServices(),
 ): Command {
   const program = new Command();
+  const resolveStorage = (
+    options: GlobalOptions,
+    interactive: boolean,
+  ): Promise<StorageSession | undefined> =>
+    createStorageSession(options, {
+      interactive,
+      output,
+      ...(services.storageRuntime === undefined
+        ? {}
+        : { runtime: services.storageRuntime }),
+    });
   program
     .name("skillslink")
     .description("Read Markdown files and turn them into self-contained URLs.")
     .version(packageMetadata.version)
-    .option("-s, --store <file>", "path to the local JSON registry")
+    .option("-c, --config <file>", "path to the CLI configuration file")
+    .option("-s, --store <file>", "path to the links.json link store")
     .showHelpAfterError();
 
   program.action(async (options: GlobalOptions) => {
     if (!isInteractiveSession()) {
       program.outputHelp();
+      return;
+    }
+
+    const storage = await resolveStorage(options, true);
+    if (storage === undefined) {
       return;
     }
 
@@ -123,6 +143,8 @@ export function createProgram(
     await createProgram(output, services).parseAsync([
       "node",
       "skillslink",
+      "--config",
+      storage.configFilePath,
       ...(options.store === undefined ? [] : ["--store", options.store]),
       selectedCommand,
     ]);
@@ -142,12 +164,19 @@ export function createProgram(
         command: Command,
       ) => {
         const interactive = isInteractiveSession(options.json === true);
+        const storage = await resolveStorage(
+          getGlobalOptions(command),
+          interactive,
+        );
+        if (storage === undefined) {
+          return;
+        }
         const sourcePath = await resolveSourcePath(filePath, interactive);
         if (sourcePath === undefined) {
           return;
         }
 
-        const registry = createRegistry(getGlobalOptions(command));
+        const registry = storage.registry;
         const current = await registry.read();
         const link = await generateDocumentLink(
           {
@@ -211,7 +240,14 @@ export function createProgram(
       "show divided, complete, or all links (default: configured mode)",
     )
     .action(async (options: ListOptions, command: Command) => {
-      const registry = createRegistry(getGlobalOptions(command));
+      const storage = await resolveStorage(
+        getGlobalOptions(command),
+        isInteractiveSession(options.json === true),
+      );
+      if (storage === undefined) {
+        return;
+      }
+      const registry = storage.registry;
       const { links, settings } = await registry.read();
       output.write(
         options.json === true
@@ -233,7 +269,14 @@ export function createProgram(
         _options: unknown,
         command: Command,
       ) => {
-        const registry = createRegistry(getGlobalOptions(command));
+        const storage = await resolveStorage(
+          getGlobalOptions(command),
+          isInteractiveSession(),
+        );
+        if (storage === undefined) {
+          return;
+        }
+        const registry = storage.registry;
         const link = await resolveRegisteredLink(
           await registry.read(),
           identifier,
@@ -258,7 +301,14 @@ export function createProgram(
         _options: unknown,
         command: Command,
       ) => {
-        const registry = createRegistry(getGlobalOptions(command));
+        const storage = await resolveStorage(
+          getGlobalOptions(command),
+          isInteractiveSession(),
+        );
+        if (storage === undefined) {
+          return;
+        }
+        const registry = storage.registry;
         const link = await resolveRegisteredLink(
           await registry.read(),
           identifier,
@@ -287,7 +337,14 @@ export function createProgram(
         command: Command,
       ) => {
         const interactive = isInteractiveSession();
-        const registry = createRegistry(getGlobalOptions(command));
+        const storage = await resolveStorage(
+          getGlobalOptions(command),
+          interactive,
+        );
+        if (storage === undefined) {
+          return;
+        }
+        const registry = storage.registry;
         const link = await resolveRegisteredLink(
           await registry.read(),
           identifier,
@@ -329,7 +386,14 @@ export function createProgram(
         options: PromptOptions,
         command: Command,
       ) => {
-        const registry = createRegistry(getGlobalOptions(command));
+        const storage = await resolveStorage(
+          getGlobalOptions(command),
+          isInteractiveSession(),
+        );
+        if (storage === undefined) {
+          return;
+        }
+        const registry = storage.registry;
         const link = await resolveRegisteredDocument(
           await registry.read(),
           identifier,
@@ -366,7 +430,14 @@ export function createProgram(
         command: Command,
       ) => {
         const interactive = isInteractiveSession();
-        const registry = createRegistry(getGlobalOptions(command));
+        const storage = await resolveStorage(
+          getGlobalOptions(command),
+          interactive,
+        );
+        if (storage === undefined) {
+          return;
+        }
+        const registry = storage.registry;
         const link = await resolveRegisteredDocument(
           await registry.read(),
           identifier,
@@ -404,15 +475,30 @@ export function createProgram(
       "default list mode: divided, complete, or all",
     )
     .action(async (options: ConfigureOptions, command: Command) => {
-      const registry = createRegistry(getGlobalOptions(command));
+      const storage = await resolveStorage(
+        getGlobalOptions(command),
+        isInteractiveSession(),
+      );
+      if (storage === undefined) {
+        return;
+      }
+      const registry = storage.registry;
       const updates = createSettingsUpdate(options);
-      const value =
-        Object.keys(updates).length === 0
-          ? await registry.read()
-          : await registry.updateSettings(updates);
+      let registrySnapshot = await registry.read();
+      if (Object.keys(updates).length > 0) {
+        registrySnapshot = await registry.updateSettings(updates);
+      }
+      const configuration = await storage.configuration.read();
       output.write(
         JSON.stringify(
-          { store: registry.filePath, settings: value.settings },
+          {
+            config: storage.configFilePath,
+            store: registry.filePath,
+            settings: {
+              ...configuration.settings,
+              ...registrySnapshot.settings,
+            },
+          },
           null,
           2,
         ),
@@ -421,9 +507,15 @@ export function createProgram(
 
   program
     .command("where")
-    .description("show the path to the JSON registry")
-    .action((_options: unknown, command: Command) => {
-      output.write(createRegistry(getGlobalOptions(command)).filePath);
+    .description("show the path to the links.json link store")
+    .action(async (_options: unknown, command: Command) => {
+      const storage = await resolveStorage(
+        getGlobalOptions(command),
+        isInteractiveSession(),
+      );
+      if (storage !== undefined) {
+        output.write(storage.registry.filePath);
+      }
     });
 
   return program;
@@ -489,13 +581,6 @@ function createDefaultServices(): ProgramServices {
   };
 }
 
-function createRegistry(options: GlobalOptions): JsonRegistry {
-  return new JsonRegistry({
-    filePath: resolveRegistryPath(options.store),
-    defaults: resolveDefaultSettings(),
-  });
-}
-
 function getGlobalOptions(command: Command): GlobalOptions {
   return command.optsWithGlobals<GlobalOptions>();
 }
@@ -509,8 +594,22 @@ function createSettingsUpdate(
       : { listDisplayMode: parseListDisplayMode(options.listMode) }),
     ...(options.siteUrl === undefined
       ? {}
-      : { siteUrl: normalizeSiteUrl(options.siteUrl) }),
+      : { siteUrl: parseSiteUrl(options.siteUrl) }),
   };
+}
+
+function parseSiteUrl(value: string): string {
+  try {
+    return normalizeSiteUrl(value);
+  } catch (error) {
+    if (error instanceof LinkFormatError) {
+      throw new CliError("CONFIGURATION_ERROR", error.message, {
+        cause: error,
+      });
+    }
+
+    throw error;
+  }
 }
 
 function parseListDisplayMode(value: string): PortableLinkDisplayMode {

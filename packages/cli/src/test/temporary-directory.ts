@@ -1,6 +1,6 @@
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
 
 const TEMPORARY_DIRECTORY_PREFIX = "skillslink-test-";
 
@@ -13,11 +13,11 @@ export async function removeTemporaryDirectory(
 ): Promise<void> {
   const resolvedDirectory = resolve(directory);
   const resolvedTempRoot = resolve(tmpdir());
+  const isGeneratedTestDirectory =
+    dirname(resolvedDirectory) === resolvedTempRoot &&
+    basename(resolvedDirectory).startsWith(TEMPORARY_DIRECTORY_PREFIX);
 
-  if (
-    !resolvedDirectory.startsWith(`${resolvedTempRoot}\\`) ||
-    !resolvedDirectory.includes(TEMPORARY_DIRECTORY_PREFIX)
-  ) {
+  if (!isGeneratedTestDirectory) {
     throw new Error(
       `Refused to remove a test directory outside the temporary area: ${resolvedDirectory}`,
     );

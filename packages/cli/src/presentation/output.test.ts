@@ -62,9 +62,15 @@ describe("CLI output", () => {
     );
     expect(formatGeneratedLink(oversizedLink)).not.toContain(oversizedLink.url);
     expect(formatLinkList([oversizedLink])).toContain("DIVIDED LINKS ONLY");
-    expect(formatLinkList([oversizedLink], { mode: "complete" })).toContain(
-      "PARTS (1)",
-    );
+    const completeFallback = formatLinkList([oversizedLink], {
+      mode: "complete",
+    });
+    const allFallback = formatLinkList([oversizedLink], { mode: "all" });
+    expect(completeFallback).toContain("PARTS (1)");
+    expect(completeFallback).toContain("AI PROMPT (DIVIDED)");
+    expect(completeFallback).not.toContain("AI PROMPT (COMPLETE)");
+    expect(allFallback).toContain("AI PROMPT (DIVIDED)");
+    expect(allFallback).not.toContain("AI PROMPT (ALL)");
   });
 
   it("supports complete and all list modes for compatible URLs", () => {

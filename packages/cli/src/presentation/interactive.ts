@@ -1,3 +1,5 @@
+import { dirname, extname, join, resolve } from "node:path";
+
 import { cancel, confirm, isCancel, path, select } from "@clack/prompts";
 
 import {
@@ -5,6 +7,7 @@ import {
   getRegisteredLinkTarget,
 } from "../application/find-registered-link-target";
 import { getGeneratedLink } from "../application/get-generated-link";
+import { normalizePathForComparison } from "../config/runtime-config";
 import { CliError } from "../domain/cli-error";
 import type {
   GeneratedLink,
@@ -14,6 +17,12 @@ import type {
 import { abbreviate, formatTimestamp } from "./output";
 
 const LINK_CHOICE_PREVIEW_LENGTH = 48;
+const JSON_EXTENSION = ".json";
+
+export interface InitialStoragePaths {
+  readonly configFilePath: string;
+  readonly linksFilePath: string;
+}
 
 export type InteractiveCommand =
   | "generate"
@@ -46,10 +55,63 @@ export async function resolveInteractiveCommand(): Promise<
       { value: "prompt", label: "Create an AI learning prompt" },
       { value: "remove", label: "Remove a registered link" },
       { value: "config", label: "Show configuration" },
-      { value: "where", label: "Show registry path" },
+      { value: "where", label: "Show link-store path" },
     ],
   });
   return handleCancellation(result, "SkillsLink closed.");
+}
+
+export async function resolveInitialStoragePaths(
+  defaults: InitialStoragePaths,
+): Promise<InitialStoragePaths | undefined> {
+  const configResult = await path({
+    message: "Where should SkillsLink save config.json?",
+    root: dirname(defaults.configFilePath),
+    directory: false,
+    initialValue: defaults.configFilePath,
+    validate: validateJsonFilePath,
+  });
+  const selectedConfigPath = handleCancellation(
+    configResult,
+    "Initial setup cancelled.",
+  );
+  if (selectedConfigPath === undefined) {
+    return undefined;
+  }
+
+  const configFilePath = resolve(selectedConfigPath);
+  const suggestedLinksPath =
+    configFilePath === resolve(defaults.configFilePath)
+      ? defaults.linksFilePath
+      : join(dirname(configFilePath), "links.json");
+  const linksResult = await path({
+    message: "Where should SkillsLink save links.json?",
+    root: dirname(suggestedLinksPath),
+    directory: false,
+    initialValue: suggestedLinksPath,
+    validate(value) {
+      const formatError = validateJsonFilePath(value);
+      if (formatError !== undefined) {
+        return formatError;
+      }
+      return normalizePathForComparison(value ?? "") ===
+        normalizePathForComparison(configFilePath)
+        ? "config.json and links.json must use different paths."
+        : undefined;
+    },
+  });
+  const selectedLinksPath = handleCancellation(
+    linksResult,
+    "Initial setup cancelled.",
+  );
+  if (selectedLinksPath === undefined) {
+    return undefined;
+  }
+
+  return {
+    configFilePath,
+    linksFilePath: resolve(selectedLinksPath),
+  };
 }
 
 export async function resolveSourcePath(
@@ -193,4 +255,11 @@ function handleCancellation<Value extends string>(
   }
 
   return result;
+}
+
+function validateJsonFilePath(value: string | undefined): string | undefined {
+  return value !== undefined &&
+    extname(value).toLocaleLowerCase("en-US") === JSON_EXTENSION
+    ? undefined
+    : "Choose a file ending in .json.";
 }

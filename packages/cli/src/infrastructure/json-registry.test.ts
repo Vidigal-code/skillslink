@@ -1,5 +1,5 @@
 import { readFile, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 
 import { afterEach, describe, expect, it } from "vitest";
 
@@ -7,6 +7,13 @@ import {
   createTemporaryDirectory,
   removeTemporaryDirectory,
 } from "../test/temporary-directory";
+import {
+  CONFIGURATION_KIND,
+  CONFIGURATION_SCHEMA_VERSION,
+  PROMPT_LANGUAGE,
+} from "../domain/configuration";
+import type { RegistrySettings } from "../domain/registry";
+import { JsonConfiguration } from "./json-configuration";
 import { JsonRegistry } from "./json-registry";
 
 describe("JsonRegistry", () => {
@@ -19,7 +26,7 @@ describe("JsonRegistry", () => {
   it("starts with the configured defaults when the JSON file does not exist", async () => {
     const directory = await createTemporaryDirectory();
     directories.push(directory);
-    const registry = new JsonRegistry({
+    const registry = createRegistry({
       filePath: join(directory, "registry.json"),
       defaults: {
         siteUrl: "https://example.github.io/docs/",
@@ -41,7 +48,7 @@ describe("JsonRegistry", () => {
     const directory = await createTemporaryDirectory();
     directories.push(directory);
     const filePath = join(directory, "custom", "links.json");
-    const registry = new JsonRegistry({
+    const registry = createRegistry({
       filePath,
       defaults: {
         siteUrl: "https://example.com/",
@@ -84,7 +91,7 @@ describe("JsonRegistry", () => {
       }),
       "utf8",
     );
-    const registry = new JsonRegistry({
+    const registry = createRegistry({
       filePath,
       defaults: {
         siteUrl: "https://example.com/",
@@ -103,7 +110,7 @@ describe("JsonRegistry", () => {
     directories.push(directory);
     const filePath = join(directory, "registry.json");
     await writeFile(filePath, "{broken", "utf8");
-    const registry = new JsonRegistry({
+    const registry = createRegistry({
       filePath,
       defaults: {
         siteUrl: "https://example.com/",
@@ -116,3 +123,27 @@ describe("JsonRegistry", () => {
     );
   });
 });
+
+function createRegistry(options: {
+  readonly filePath: string;
+  readonly defaults: RegistrySettings;
+}): JsonRegistry {
+  const filePath = resolve(options.filePath);
+  return new JsonRegistry({
+    filePath,
+    configuration: new JsonConfiguration({
+      filePath: join(dirname(filePath), "config.json"),
+      defaults: {
+        kind: CONFIGURATION_KIND,
+        schemaVersion: CONFIGURATION_SCHEMA_VERSION,
+        linksFile: filePath,
+        settings: {
+          ...options.defaults,
+          completeLinks: true,
+          dividedLinks: true,
+          promptLanguage: PROMPT_LANGUAGE,
+        },
+      },
+    }),
+  });
+}

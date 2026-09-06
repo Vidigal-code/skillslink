@@ -1,6 +1,6 @@
 # skillslink
 
-Generate self-contained document and divided-part URLs from local `.md` files. The command validates and reads the file locally, opens the viewer, and asks whether to save the complete link hierarchy in the user's JSON registry. It does not call a publishing API or use a GitHub token.
+Generate self-contained complete-document and divided-part URLs from local `.md` files. The command reads files locally, opens the viewer when appropriate, and can save the complete link hierarchy in a private `links.json` file. CLI settings and the selected link-store path live separately in `config.json`. SkillsLink does not call a publishing API or use a GitHub token.
 
 ```bash
 npx @vidigal-code/skillslink@latest generate file.md
@@ -15,6 +15,74 @@ npx @vidigal-code/skillslink@latest remove file.md
 
 Run `skillslink` without a subcommand to open the complete interactive command menu.
 
+## First-run storage
+
+On the first interactive use without `--config`, `SKILLSLINK_CONFIG`, `--store`, or `SKILLSLINK_STORE`, SkillsLink asks where to create its configuration and link-store files. It uses the current home directory and offers the same `.skillslink` layout on every operating system:
+
+| Platform | Configuration file               | Link store                      |
+| -------- | -------------------------------- | ------------------------------- |
+| Windows  | `<home>\.skillslink\config.json` | `<home>\.skillslink\links.json` |
+| macOS    | `~/.skillslink/config.json`      | `~/.skillslink/links.json`      |
+| Linux    | `~/.skillslink/config.json`      | `~/.skillslink/links.json`      |
+
+For example, the Windows defaults can resolve to `C:\Users\Alex\.skillslink\config.json` and `C:\Users\Alex\.skillslink\links.json`. The initial configuration is:
+
+```json
+{
+  "kind": "skillslink-config",
+  "schemaVersion": 1,
+  "linksFile": "/home/alex/.skillslink/links.json",
+  "settings": {
+    "siteUrl": "https://vidigal-code.github.io/skillslink/",
+    "listDisplayMode": "divided",
+    "completeLinks": true,
+    "dividedLinks": true,
+    "promptLanguage": "en"
+  }
+}
+```
+
+The independent link store starts as:
+
+```json
+{
+  "kind": "skillslink-links",
+  "schemaVersion": 1,
+  "links": []
+}
+```
+
+If the selected configuration path differs from the default, the interactive setup records it in `~/.skillslink/active-config.json`. Passing `--config` or `SKILLSLINK_CONFIG` for one invocation does not rewrite this locator:
+
+```json
+{
+  "kind": "skillslink-config-location",
+  "schemaVersion": 1,
+  "configFile": "/home/alex/project/skillslink-config.json"
+}
+```
+
+The locator lets later commands find the custom configuration without prompting. Help, version, JSON-output, and non-interactive invocations never start the setup wizard. Outside the interactive setup, read-only commands do not create storage files when they are absent.
+
+Select files for one invocation with options or environment variables:
+
+```bash
+skillslink --config ./data/config.json --store ./data/links.json list
+SKILLSLINK_CONFIG=./data/config.json SKILLSLINK_STORE=./data/links.json skillslink list
+```
+
+Resolution order is:
+
+1. Configuration: `--config`, `SKILLSLINK_CONFIG`, `active-config.json`, default `config.json`.
+2. Links: `--store`, `SKILLSLINK_STORE`, `linksFile` in the selected configuration, default `links.json`.
+3. Settings: saved configuration, settings embedded in a legacy combined registry when no split configuration exists, initial environment defaults, built-in defaults. `list --mode` overrides `listDisplayMode` for one invocation.
+
+For backward compatibility, when no configuration or locator exists and only `--store` or `SKILLSLINK_STORE` selects a link file, SkillsLink uses `config.json` beside that file. Once a configuration exists, the link-store selector applies only to the current invocation.
+
+`skillslink where` prints the effective link-store path. `skillslink config` prints the configuration path, link-store path, and persisted settings. Existing combined registry files with schema version 1 or 2 remain readable and are converted when a state-changing command writes them. When no configuration, locator, override, or new default link store exists, SkillsLink checks the former platform-specific default registry.
+
+## Generate and manage links
+
 `publish` and `create` are aliases of `generate`; all three only create URLs. Only valid UTF-8 `.md` documents up to 64 KiB are accepted. The complete link contains the whole file. A shared CommonMark and GFM parser creates nested links for headings, paragraphs, fenced code, individual list items, quotes, tables, and other blocks. Parts above 1 KiB are split further at safe text boundaries. New links use compact bytes and zlib compression when it shortens the result. Their payload stays in a URL fragment and is not sent in the HTTP request, preventing this document data from causing an HTTP 431 response.
 
 Base64URL is not encryption. Anyone with the complete generated URL can recover the document. The fragment is not sent to the configured host, but it can remain in browser history or be exposed when copied. Do not encode secrets.
@@ -28,15 +96,13 @@ skillslink generate guide.md --json
 
 In an interactive terminal, the file argument can be omitted. The CLI then opens an `@clack/prompts` path selector and asks whether to register the generated links. Each parent record contains the complete URL, UUID, file name, media type, ISO creation date and time, and nested part records. Every part has a separately checked UUID, title, byte size, Markdown name, and complete URL.
 
-`skillslink list` renders each parent followed by its nested part table and an English AI prompt containing the complete divided URLs. Long table values are abbreviated with `...`; `skillslink list --json` returns the complete hierarchy. Use `open` to launch a registered URL, `copy` to place it on the system clipboard, and `download` (alias `get`) to decode and save the selected Markdown file. These commands accept a parent or part UUID, URL, generated file name, or part title and show an interactive selector when the argument is omitted. Downloads prompt for a directory or accept `--directory <path>` and refuse to replace an existing file unless `--overwrite` is selected.
+`skillslink list` renders each parent followed by its nested part table and an English AI prompt containing the complete divided URLs. Long table values are abbreviated with `...`; `skillslink list --json` returns the complete hierarchy. Use `open` to launch a registered URL, `copy` to place it on the system clipboard, and `download` (alias `get`) to decode and save the selected Markdown file. These commands accept a parent or part UUID, URL, generated file name, or part title and show an interactive selector when the argument is omitted. Downloads accept `--directory <path>` or prompt for a directory in an interactive terminal. In non-interactive mode, an existing destination is rejected unless `--overwrite` is selected; in interactive mode, the CLI can ask for confirmation before replacing it.
 
-The default `list` mode is `divided`. Override one call with `--mode divided|complete|all`, or persist a default with `skillslink config --list-mode divided|complete|all`. The English prompt follows that selection, except that a complete URL above the 8000-character compatibility limit is always omitted in favor of its smaller parts.
+The default `list` mode is `divided`. Override one call with `--mode divided|complete|all`, or persist a default with `skillslink config --list-mode divided|complete|all`. The `completeLinks` and `dividedLinks` capability settings both default to `true`, and `promptLanguage` is `en`. The English prompt follows the selected list mode, except that a complete URL above the 8000-character compatibility limit is always omitted in favor of its smaller parts.
 
-`skillslink prompt <id-or-name>` prints the same English AI learning prompt. Add `--copy` to place it on the clipboard. The full value remains available in the JSON registry and `list --json`.
+`skillslink prompt <id-or-name>` prints the same English AI learning prompt. Add `--copy` to place it on the clipboard. The full value remains available in `links.json` and `list --json`.
 
 Only `.md` is a document input. Text files and every other extension are rejected.
-
-The default registry is stored in the operating system's user-data directory. `skillslink where` prints its path. Select another file with `--store <file>` or `SKILLSLINK_STORE`.
 
 Configure another static viewer with:
 

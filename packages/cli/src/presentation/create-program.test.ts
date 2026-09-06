@@ -123,10 +123,12 @@ describe("registered-link commands", () => {
     expect(configuredListOutput.join("\n")).toContain("AI PROMPT (COMPLETE)");
     expect(configuredListOutput.join("\n")).not.toContain("PARTS (2)");
 
-    const storedRegistry = JSON.parse(await readFile(registryPath, "utf8")) as {
+    const storedConfiguration = JSON.parse(
+      await readFile(join(directory, "config.json"), "utf8"),
+    ) as {
       readonly settings: { readonly listDisplayMode: string };
     };
-    expect(storedRegistry.settings.listDisplayMode).toBe("complete");
+    expect(storedConfiguration.settings.listDisplayMode).toBe("complete");
   });
 
   it("rejects an unknown list mode as a configuration error", async () => {

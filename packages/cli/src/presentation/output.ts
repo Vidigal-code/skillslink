@@ -74,6 +74,7 @@ export function formatLinkList(
     ].join(" | ");
 
     const canUseCompleteLink = isRecommendedPortableUrl(link.url);
+    const promptMode = canUseCompleteLink ? mode : "divided";
     const partTable =
       (mode === "complete" && canUseCompleteLink) || link.parts.length === 0
         ? []
@@ -81,8 +82,8 @@ export function formatLinkList(
     return [
       parentRow,
       ...partTable,
-      `  AI PROMPT (${mode.toLocaleUpperCase("en-US")})`,
-      indent(createPrompt(link, mode), "  "),
+      `  AI PROMPT (${promptMode.toLocaleUpperCase("en-US")})`,
+      indent(createPrompt(link, promptMode), "  "),
     ];
   });
 
