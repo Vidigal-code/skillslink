@@ -1,4 +1,5 @@
 import { access, readFile, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
 import { createAiLearningPrompt } from "@skillslink/link-format";
@@ -23,6 +24,11 @@ const promptMocks = vi.hoisted(() => ({
   select: vi.fn(),
   text: vi.fn(),
 }));
+
+const TEST_HOME_DIRECTORY = join(
+  tmpdir(),
+  `skillslink-public-cli-home-${process.pid}`,
+);
 
 vi.mock("@clack/prompts", () => ({
   ...promptMocks,
@@ -57,6 +63,7 @@ describe("public CLI command surface", () => {
       { name: "copy", aliases: [] },
       { name: "download", aliases: ["get"] },
       { name: "prompt", aliases: [] },
+      { name: "copy-prompt", aliases: [] },
       { name: "remove", aliases: ["rm"] },
       { name: "config", aliases: [] },
       { name: "where", aliases: [] },
@@ -88,6 +95,7 @@ describe("public CLI command surface", () => {
       copy: [],
       download: ["-d, --directory <path>", "--overwrite"],
       prompt: ["--copy"],
+      "copy-prompt": [],
       remove: ["-y, --yes"],
       config: ["--site-url <url>", "--list-mode <mode>"],
       where: [],
@@ -115,6 +123,7 @@ describe("public CLI command surface", () => {
       "copy",
       "download",
       "prompt",
+      "copy-prompt",
       "remove",
       "config",
       "where",
@@ -144,11 +153,15 @@ describe("public CLI command surface", () => {
       expect.objectContaining({
         options: expect.arrayContaining([
           expect.objectContaining({ value: "generate" }),
-          expect.objectContaining({ value: "list" }),
+          expect.objectContaining({
+            label: "Show one registered document",
+            value: "list",
+          }),
           expect.objectContaining({ value: "open" }),
           expect.objectContaining({ value: "copy" }),
           expect.objectContaining({ value: "download" }),
           expect.objectContaining({ value: "prompt" }),
+          expect.objectContaining({ value: "copy-prompt" }),
           expect.objectContaining({ value: "remove" }),
           expect.objectContaining({ value: "config" }),
           expect.objectContaining({ value: "where" }),
@@ -209,7 +222,7 @@ describe("public CLI command surface", () => {
     });
   });
 
-  it("lists registered links with their divided prompt", async () => {
+  it("lists one registered link by ID with its divided prompt", async () => {
     const directory = await createTemporaryDirectory();
     directories.push(directory);
     const services = createServices();
@@ -219,12 +232,117 @@ describe("public CLI command surface", () => {
     await createProgram(listOutput.output, services).parseAsync([
       ...fixture.argumentsPrefix,
       "list",
+      fixture.link.id,
     ]);
 
     const renderedList = listOutput.messages.join("\n");
+    expect(renderedList).toContain("SELECTED DOCUMENT");
     expect(renderedList).toContain("guide.md");
-    expect(renderedList).toContain("PARTS (");
+    expect(renderedList).not.toContain("PARTS (");
     expect(renderedList).toContain("AI PROMPT (DIVIDED)");
+  });
+
+  it("selects one registered document by ID in an interactive terminal", async () => {
+    const directory = await createTemporaryDirectory();
+    directories.push(directory);
+    const services = createServices();
+    const fixture = await registerGuide(directory, services);
+    const secondSourcePath = join(directory, "advanced.md");
+    await writeFile(
+      secondSourcePath,
+      "# Advanced\n\nOnly the selected document should be displayed.",
+      "utf8",
+    );
+    await createProgram(createOutput().output, services).parseAsync([
+      ...fixture.argumentsPrefix,
+      "generate",
+      secondSourcePath,
+      "--save",
+      "--no-open",
+    ]);
+    const registry = JSON.parse(
+      await readFile(fixture.registryPath, "utf8"),
+    ) as StoredRegistry;
+    const selectedLink = registry.links.find(
+      (link) => link.name === "advanced.md",
+    );
+    expect(selectedLink).toBeDefined();
+    if (selectedLink === undefined) {
+      throw new Error("Expected advanced.md to be registered.");
+    }
+    promptMocks.select.mockResolvedValueOnce(selectedLink.id);
+    const listOutput = createOutput();
+
+    await withTerminalMode(true, () =>
+      createProgram(listOutput.output, services).parseAsync([
+        ...fixture.argumentsPrefix,
+        "list",
+      ]),
+    );
+
+    expect(promptMocks.select).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({
+        message: "Choose a document ID to list",
+        options: expect.arrayContaining([
+          expect.objectContaining({
+            hint: expect.stringContaining(selectedLink.name),
+            label: selectedLink.id,
+            value: selectedLink.id,
+          }),
+        ]),
+      }),
+    );
+    const renderedList = listOutput.messages.join("\n");
+    expect(renderedList).toContain(`ID: ${selectedLink.id}`);
+    expect(renderedList).toContain(selectedLink.name);
+    expect(renderedList).not.toContain(`ID: ${fixture.link.id}`);
+    expect(renderedList).not.toContain(fixture.link.name);
+    expect(renderedList).not.toContain(fixture.link.parts[0]?.url);
+    expect(renderedList).toContain("AI PROMPT (DIVIDED)");
+    expect(renderedList).toContain(
+      "Learn this skill by opening every SkillsLink page URL below in order:",
+    );
+  });
+
+  it("prints an empty-registry message without opening the list selector", async () => {
+    const directory = await createTemporaryDirectory();
+    directories.push(directory);
+    const registryPath = join(directory, "empty-links.json");
+    const listOutput = createOutput();
+
+    await withTerminalMode(true, () =>
+      createProgram(listOutput.output, createServices()).parseAsync([
+        "node",
+        "skillslink",
+        "--store",
+        registryPath,
+        "list",
+      ]),
+    );
+
+    expect(listOutput.messages).toEqual(["No URLs are registered."]);
+    expect(promptMocks.select).not.toHaveBeenCalled();
+  });
+
+  it("prints no document when interactive list selection is cancelled", async () => {
+    const directory = await createTemporaryDirectory();
+    directories.push(directory);
+    const services = createServices();
+    const fixture = await registerGuide(directory, services);
+    const listOutput = createOutput();
+    promptMocks.select.mockResolvedValueOnce(Symbol("cancelled"));
+
+    await withTerminalMode(true, () =>
+      createProgram(listOutput.output, services).parseAsync([
+        ...fixture.argumentsPrefix,
+        "list",
+      ]),
+    );
+
+    expect(promptMocks.cancel).toHaveBeenCalledExactlyOnceWith(
+      "Command cancelled.",
+    );
+    expect(listOutput.messages).toEqual([]);
   });
 
   it("returns complete parent and part URLs from list JSON output", async () => {
@@ -247,6 +365,22 @@ describe("public CLI command surface", () => {
     expect(links[0]?.parts.map((part) => part.url)).toEqual(
       fixture.link.parts.map((part) => part.url),
     );
+
+    const selectedJsonOutput = createOutput();
+    await withTerminalMode(true, () =>
+      createProgram(selectedJsonOutput.output, services).parseAsync([
+        ...fixture.argumentsPrefix,
+        "list",
+        fixture.link.id,
+        "--json",
+      ]),
+    );
+    const selectedLinks = JSON.parse(
+      selectedJsonOutput.messages[0] ?? "",
+    ) as StoredLink[];
+    expect(selectedLinks).toHaveLength(1);
+    expect(selectedLinks[0]?.id).toBe(fixture.link.id);
+    expect(promptMocks.select).not.toHaveBeenCalled();
   });
 
   it("opens the exact registered document URL", async () => {
@@ -268,7 +402,9 @@ describe("public CLI command surface", () => {
   it("copies the exact registered document URL", async () => {
     const directory = await createTemporaryDirectory();
     directories.push(directory);
-    const copyText = vi.fn(async () => undefined);
+    const copyText = vi
+      .fn<(value: string) => Promise<void>>()
+      .mockResolvedValue(undefined);
     const services = createServices({ copyText });
     const fixture = await registerGuide(directory, services);
 
@@ -324,7 +460,9 @@ describe("public CLI command surface", () => {
   it("copies the exact English learning prompt", async () => {
     const directory = await createTemporaryDirectory();
     directories.push(directory);
-    const copyText = vi.fn(async () => undefined);
+    const copyText = vi
+      .fn<(value: string) => Promise<void>>()
+      .mockResolvedValue(undefined);
     const services = createServices({ copyText });
     const fixture = await registerGuide(directory, services);
     const promptOutput = createOutput();
@@ -344,6 +482,60 @@ describe("public CLI command surface", () => {
     expect(promptOutput.messages).toEqual([
       `AI prompt copied: ${fixture.link.name} (${fixture.link.id})`,
     ]);
+  });
+
+  it("selects a registered document and copies only its English prompt", async () => {
+    const directory = await createTemporaryDirectory();
+    directories.push(directory);
+    const copyText = vi
+      .fn<(value: string) => Promise<void>>()
+      .mockResolvedValue(undefined);
+    const services = createServices({ copyText });
+    const fixture = await registerGuide(directory, services);
+    const copyPromptOutput = createOutput();
+    const expectedPrompt = createAiLearningPrompt({
+      fullUrl: fixture.link.url,
+      partUrls: fixture.link.parts.map((part) => part.url),
+    });
+    promptMocks.select.mockResolvedValueOnce(fixture.link.id);
+
+    await withTerminalMode(true, () =>
+      createProgram(copyPromptOutput.output, services).parseAsync([
+        ...fixture.argumentsPrefix,
+        "copy-prompt",
+      ]),
+    );
+
+    expect(promptMocks.select).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({
+        message: "Choose a document ID to copy a prompt for",
+        options: expect.arrayContaining([
+          expect.objectContaining({
+            hint: expect.stringContaining(fixture.link.name),
+            label: fixture.link.id,
+            value: fixture.link.id,
+          }),
+        ]),
+      }),
+    );
+    expect(copyText).toHaveBeenCalledExactlyOnceWith(expectedPrompt);
+    expect(copyText.mock.calls[0]?.[0]).toContain(
+      "Learn this skill by opening every SkillsLink page URL below in order:",
+    );
+    expect(copyText.mock.calls[0]?.[0]).toContain(fixture.link.parts[0]?.url);
+    expect(copyPromptOutput.messages).toEqual([
+      `AI prompt copied: ${fixture.link.name} (${fixture.link.id})`,
+    ]);
+
+    copyText.mockClear();
+    promptMocks.select.mockClear();
+    await createProgram(createOutput().output, services).parseAsync([
+      ...fixture.argumentsPrefix,
+      "copy-prompt",
+      fixture.link.id,
+    ]);
+    expect(promptMocks.select).not.toHaveBeenCalled();
+    expect(copyText).toHaveBeenCalledExactlyOnceWith(expectedPrompt);
   });
 
   it("removes a registered document and all nested parts", async () => {
@@ -643,6 +835,14 @@ function createServices(
     documentWriter: new NodeDocumentWriter(),
     openUrl: overrides.openUrl ?? vi.fn(async () => undefined),
     copyText: overrides.copyText ?? vi.fn(async () => undefined),
+    storageRuntime: {
+      environment: {},
+      homeDirectory: TEST_HOME_DIRECTORY,
+      legacyRegistryFilePath: join(
+        TEST_HOME_DIRECTORY,
+        "missing-legacy-registry.json",
+      ),
+    },
   };
 }
 

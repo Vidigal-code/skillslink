@@ -101,69 +101,71 @@ Without `--save`, an interactive terminal asks whether to register the generated
 
 ## List: default divided-link view
 
-The persisted default is `divided`. The parent row keeps an abbreviated complete URL, the nested table shows every divided link, and the English prompt contains the complete divided URLs.
+The persisted default is `divided`. In a TTY, `list` first asks for one parent document by its full UUID. After selection it prints only that document's concise metadata and English prompt. The complete divided URLs appear once, inside the prompt.
 
 ```console
 $ skillslink --config ./test-data/config.json --store ./test-data/links.json list
-ID                 | FILE                     | CREATED (UTC)        | LINK
--------------------+--------------------------+----------------------+-------------------------------------------
-5853516a-bba8-4... | guide.md                 | 2026-09-06T10:19:12Z | https://vidigal-code.github.io/skillsli...
-  PARTS (2)
-  PART ID            | TITLE                    | BYTES    | LINK
-  -------------------+--------------------------+----------+-------------------------------------------
-  61f00a5f-faf4-4... | Install                  | 11       | https://vidigal-code.github.io/skillsli...
-  39df523d-ff62-4... | Run npm install .        | 19       | https://vidigal-code.github.io/skillsli...
-  AI PROMPT (DIVIDED)
-  Learn this skill by opening every SkillsLink page URL below in order:
+Choose a document ID to list
+> 5853516a-bba8-4a9b-9b3f-4edd317f0e85 (guide.md | 2026-09-06T10:19:12Z)
 
-  1. https://vidigal-code.github.io/skillslink/view/#document=v2.AAAAEgAFcDEubWQjIEluc3RhbGwKCg
-  2. https://vidigal-code.github.io/skillslink/view/#document=v2.AAAAGgAFcDIubWRSdW4gYG5wbSBpbnN0YWxsYC4K
+SELECTED DOCUMENT
+ID: 5853516a-bba8-4a9b-9b3f-4edd317f0e85
+File: guide.md
+Created: 2026-09-06T10:19:12Z
+Complete URL: https://vidigal-code.github.io/skillslink/view/#document=v2.AAAAKAAIZ3VpZGUubWQjIEluc3RhbGwKC...
 
-  At each link, read the rendered Markdown part completely. Join the parts in numbered order to reconstruct one complete skill. Learn all instructions and constraints from the combined content. Then briefly state the skill's purpose, when it should be used, and the rules you must follow. Wait for my task after that.
+AI PROMPT (DIVIDED)
+Learn this skill by opening every SkillsLink page URL below in order:
+
+1. https://vidigal-code.github.io/skillslink/view/#document=v2.AAAAEgAFcDEubWQjIEluc3RhbGwKCg
+2. https://vidigal-code.github.io/skillslink/view/#document=v2.AAAAGgAFcDIubWRSdW4gYG5wbSBpbnN0YWxsYC4K
+
+At each link, read the rendered Markdown part completely. Join the parts in numbered order to reconstruct one complete skill. Learn all instructions and constraints from the combined content. Then briefly state the skill's purpose, when it should be used, and the rules you must follow. Wait for my task after that.
 ```
 
-`ls` is an alias of `list`. An empty link store prints `No URLs are registered.`
+Pass a parent UUID, exact complete URL, or file name to bypass the selector. `ls` is an alias of `list`. An empty link store prints `No URLs are registered.` without opening a selector.
 
 ## List: one-time alternative views
 
-`--mode complete` omits the part table for a compatible complete URL and puts only that complete URL in the prompt.
+`--mode complete` puts only a compatible complete URL in the prompt.
 
 ```console
-$ skillslink --config ./test-data/config.json --store ./test-data/links.json list --mode complete
-ID                 | FILE                     | CREATED (UTC)        | LINK
--------------------+--------------------------+----------------------+-------------------------------------------
-5853516a-bba8-4... | guide.md                 | 2026-09-06T10:19:12Z | https://vidigal-code.github.io/skillsli...
-  AI PROMPT (COMPLETE)
-  Learn this skill by opening every SkillsLink page URL below in order:
+$ skillslink --config ./test-data/config.json --store ./test-data/links.json list 5853516a-bba8-4a9b-9b3f-4edd317f0e85 --mode complete
+SELECTED DOCUMENT
+ID: 5853516a-bba8-4a9b-9b3f-4edd317f0e85
+File: guide.md
+Created: 2026-09-06T10:19:12Z
+Complete URL: https://vidigal-code.github.io/skillslink/view/#document=v2.AAAAKAAIZ3VpZGUubWQjIEluc3RhbGwKC...
 
-  1. https://vidigal-code.github.io/skillslink/view/#document=v2.AAAAKAAIZ3VpZGUubWQjIEluc3RhbGwKClJ1biBgbnBtIGluc3RhbGxgLgo
+AI PROMPT (COMPLETE)
+Learn this skill by opening every SkillsLink page URL below in order:
 
-  At each link, read the rendered Markdown part completely. Join the parts in numbered order to reconstruct one complete skill. Learn all instructions and constraints from the combined content. Then briefly state the skill's purpose, when it should be used, and the rules you must follow. Wait for my task after that.
+1. https://vidigal-code.github.io/skillslink/view/#document=v2.AAAAKAAIZ3VpZGUubWQjIEluc3RhbGwKClJ1biBgbnBtIGluc3RhbGxgLgo
+
+At each link, read the rendered Markdown part completely. Join the parts in numbered order to reconstruct one complete skill. Learn all instructions and constraints from the combined content. Then briefly state the skill's purpose, when it should be used, and the rules you must follow. Wait for my task after that.
 ```
 
-`--mode all` keeps the part table and puts the complete URL before every divided URL in the prompt.
+`--mode all` puts the complete URL before every divided URL in the prompt.
 
 ```console
-$ skillslink --config ./test-data/config.json --store ./test-data/links.json list --mode all
-ID                 | FILE                     | CREATED (UTC)        | LINK
--------------------+--------------------------+----------------------+-------------------------------------------
-5853516a-bba8-4... | guide.md                 | 2026-09-06T10:19:12Z | https://vidigal-code.github.io/skillsli...
-  PARTS (2)
-  PART ID            | TITLE                    | BYTES    | LINK
-  -------------------+--------------------------+----------+-------------------------------------------
-  61f00a5f-faf4-4... | Install                  | 11       | https://vidigal-code.github.io/skillsli...
-  39df523d-ff62-4... | Run npm install .        | 19       | https://vidigal-code.github.io/skillsli...
-  AI PROMPT (ALL)
-  Learn this skill by opening every SkillsLink page URL below in order:
+$ skillslink --config ./test-data/config.json --store ./test-data/links.json list 5853516a-bba8-4a9b-9b3f-4edd317f0e85 --mode all
+SELECTED DOCUMENT
+ID: 5853516a-bba8-4a9b-9b3f-4edd317f0e85
+File: guide.md
+Created: 2026-09-06T10:19:12Z
+Complete URL: https://vidigal-code.github.io/skillslink/view/#document=v2.AAAAKAAIZ3VpZGUubWQjIEluc3RhbGwKC...
 
-  1. https://vidigal-code.github.io/skillslink/view/#document=v2.AAAAKAAIZ3VpZGUubWQjIEluc3RhbGwKClJ1biBgbnBtIGluc3RhbGxgLgo
-  2. https://vidigal-code.github.io/skillslink/view/#document=v2.AAAAEgAFcDEubWQjIEluc3RhbGwKCg
-  3. https://vidigal-code.github.io/skillslink/view/#document=v2.AAAAGgAFcDIubWRSdW4gYG5wbSBpbnN0YWxsYC4K
+AI PROMPT (ALL)
+Learn this skill by opening every SkillsLink page URL below in order:
 
-  At each link, read the rendered Markdown part completely. Join the parts in numbered order to reconstruct one complete skill. Learn all instructions and constraints from the combined content. Then briefly state the skill's purpose, when it should be used, and the rules you must follow. Wait for my task after that.
+1. https://vidigal-code.github.io/skillslink/view/#document=v2.AAAAKAAIZ3VpZGUubWQjIEluc3RhbGwKClJ1biBgbnBtIGluc3RhbGxgLgo
+2. https://vidigal-code.github.io/skillslink/view/#document=v2.AAAAEgAFcDEubWQjIEluc3RhbGwKCg
+3. https://vidigal-code.github.io/skillslink/view/#document=v2.AAAAGgAFcDIubWRSdW4gYG5wbSBpbnN0YWxsYC4K
+
+At each link, read the rendered Markdown part completely. Join the parts in numbered order to reconstruct one complete skill. Learn all instructions and constraints from the combined content. Then briefly state the skill's purpose, when it should be used, and the rules you must follow. Wait for my task after that.
 ```
 
-For a complete URL longer than 8000 characters, every human-readable mode falls back to the divided links and the parent table displays `DIVIDED LINKS ONLY`. `list --json` is the machine-readable alternative and prints an array containing the complete document and part records without display abbreviation.
+For a complete URL longer than 8000 characters, every human-readable mode falls back to the divided links and the selected summary hides the incompatible complete value. `list --json` is the machine-readable alternative and prints an array containing complete document and part records without display abbreviation. With no identifier it returns all records; with an identifier it returns a one-document array.
 
 ## Open
 
@@ -216,6 +218,19 @@ At each link, read the rendered Markdown part completely. Join the parts in numb
 $ skillslink --config ./test-data/config.json --store ./test-data/links.json prompt guide.md --copy
 AI prompt copied: guide.md (5853516a-bba8-4a9b-9b3f-4edd317f0e85)
 ```
+
+## Copy prompt
+
+`copy-prompt` always copies only the English divided-link learning prompt, including every part URL and the final instructions. Without an identifier, it asks for one registered document by its full UUID.
+
+```console
+$ skillslink --config ./test-data/config.json --store ./test-data/links.json copy-prompt
+Choose a document ID to copy a prompt for
+> 5853516a-bba8-4a9b-9b3f-4edd317f0e85 (guide.md | 2026-09-06T10:19:12Z)
+AI prompt copied: guide.md (5853516a-bba8-4a9b-9b3f-4edd317f0e85)
+```
+
+The clipboard contains the prompt itself, starting with `Learn this skill by opening every SkillsLink page URL below in order:`. It does not include the confirmation line, document metadata, or terminal formatting. Pass a UUID, exact complete URL, or file name to bypass the selector. `prompt --copy` uses the same implementation.
 
 ## Remove
 
@@ -303,13 +318,15 @@ Options:
 
 Commands:
   generate|publish [options] [file]    read a .md file and generate its URL
-  list|ls [options]                    show registered links as a compact table
+  list|ls [options] [id-or-name]       select and show one registered document
   open [id-or-name]                    open a registered link by ID or file name
   copy [id-or-name]                    copy a registered link by ID or file name
   download|get [options] [id-or-name]  recover a registered document into a
                                        selected directory
   prompt [options] [id-or-name]        print an English AI learning prompt with
                                        registered links
+  copy-prompt [id-or-name]             select a document and copy only its
+                                       English AI prompt
   remove|rm [options] [id-or-name]     remove a registered link by ID or file
                                        name
   config [options]                     read or update persistent configuration
@@ -331,11 +348,12 @@ After initial storage setup, running `skillslink` without a subcommand in a TTY 
 $ skillslink
 What would you like to do?
   Generate a document link
-  List registered links
+  Show one registered document
   Open a registered link
   Copy a registered link
   Download a registered document
   Create an AI learning prompt
+  Copy an AI learning prompt
   Remove a registered link
   Show configuration
   Show link-store path

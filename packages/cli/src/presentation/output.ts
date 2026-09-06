@@ -22,18 +22,14 @@ export const standardOutput: CliOutput = {
 };
 
 export function formatGeneratedLink(link: GeneratedLink): string {
-  const completeLinkLine = isRecommendedPortableUrl(link.url)
-    ? `Complete URL: ${abbreviatePortableUrl(link.url, 96)}`
-    : "Complete URL: hidden because it exceeds the 8000-character compatibility limit; use the ordered part links.";
-
   return [
     "AI PROMPT (DIVIDED LINKS)",
-    createPrompt(link, "divided"),
+    createRegisteredLinkPrompt(link, "divided"),
     "",
     `Generated from: ${link.name}`,
     `ID: ${link.id}`,
     `Created: ${formatTimestamp(link.createdAt)}`,
-    completeLinkLine,
+    formatCompleteLinkLine(link),
     `Divided links: ${link.parts.length}`,
     ...(link.parts.length === 0 ? [] : [formatPartTable(link.parts)]),
   ].join("\n");
@@ -41,6 +37,24 @@ export function formatGeneratedLink(link: GeneratedLink): string {
 
 export interface FormatLinkListOptions {
   readonly mode?: PortableLinkDisplayMode;
+}
+
+export function formatSelectedLink(
+  link: GeneratedLink,
+  options: FormatLinkListOptions = {},
+): string {
+  const promptMode = resolvePromptMode(link, options.mode ?? "divided");
+
+  return [
+    "SELECTED DOCUMENT",
+    `ID: ${link.id}`,
+    `File: ${link.name}`,
+    `Created: ${formatTimestamp(link.createdAt)}`,
+    formatCompleteLinkLine(link),
+    "",
+    `AI PROMPT (${promptMode.toLocaleUpperCase("en-US")})`,
+    createRegisteredLinkPrompt(link, promptMode),
+  ].join("\n");
 }
 
 export function formatLinkList(
@@ -74,7 +88,7 @@ export function formatLinkList(
     ].join(" | ");
 
     const canUseCompleteLink = isRecommendedPortableUrl(link.url);
-    const promptMode = canUseCompleteLink ? mode : "divided";
+    const promptMode = resolvePromptMode(link, mode);
     const partTable =
       (mode === "complete" && canUseCompleteLink) || link.parts.length === 0
         ? []
@@ -83,7 +97,7 @@ export function formatLinkList(
       parentRow,
       ...partTable,
       `  AI PROMPT (${promptMode.toLocaleUpperCase("en-US")})`,
-      indent(createPrompt(link, promptMode), "  "),
+      indent(createRegisteredLinkPrompt(link, promptMode), "  "),
     ];
   });
 
@@ -146,7 +160,7 @@ function formatPartTable(parts: readonly GeneratedPartLink[]): string {
   ].join("\n");
 }
 
-function createPrompt(
+export function createRegisteredLinkPrompt(
   link: GeneratedLink,
   mode: PortableLinkDisplayMode,
 ): string {
@@ -157,6 +171,19 @@ function createPrompt(
     },
     mode,
   );
+}
+
+function formatCompleteLinkLine(link: GeneratedLink): string {
+  return isRecommendedPortableUrl(link.url)
+    ? `Complete URL: ${abbreviatePortableUrl(link.url, 96)}`
+    : "Complete URL: hidden because it exceeds the 8000-character compatibility limit; use the ordered part links.";
+}
+
+function resolvePromptMode(
+  link: GeneratedLink,
+  requestedMode: PortableLinkDisplayMode,
+): PortableLinkDisplayMode {
+  return isRecommendedPortableUrl(link.url) ? requestedMode : "divided";
 }
 
 function indent(value: string, prefix: string): string {

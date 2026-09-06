@@ -103,18 +103,22 @@ skillslink generate file.md --json
 
 ```bash
 skillslink list
+skillslink list <id-or-name>
 skillslink list --json
 skillslink open guide.md
 skillslink copy guide.md
 skillslink download guide.md --directory ./recovered
 skillslink prompt guide.md
+skillslink copy-prompt
 skillslink remove guide.md
 skillslink where
 ```
 
-`list` prints each document as a parent row followed by a nested part table. Long URLs and UUIDs are abbreviated with `...`; `links.json` and `list --json` retain every complete value. `open`, `copy`, and `download` accept a document or part UUID, URL, generated file name, or part title. Without one, an interactive selector shows the complete hierarchy. `remove` deletes one parent document and all its nested part links. If more than one entry has the same case-insensitive name, the most recently created entry is selected.
+In an interactive terminal, `list` asks for one parent document by its full UUID. It then prints only the selected document's ID, file name, creation time, abbreviated complete URL, and English AI learning prompt. The prompt contains the complete usable URLs without repeating them in a part table. Pass `list <id-or-name>` to select directly. `list --json` remains prompt-free and returns the complete hierarchy for every registered document; a direct identifier limits that JSON array to one document.
 
-`open` launches the exact saved URL in the default browser. `copy` writes it to the operating system clipboard. `download` decodes the selected URL and saves its `.md` content in the selected directory; use `--overwrite` to replace an existing file. `prompt` prints an English learning prompt with all recommended links, and `prompt --copy` copies it. Interactive commands ask for the saved item or destination when an argument is omitted.
+`open`, `copy`, and `download` accept a document or part UUID, URL, generated file name, or part title. Without one, an interactive selector shows the complete hierarchy. `remove` deletes one parent document and all its nested part links. If more than one entry has the same case-insensitive name, the most recently created entry is selected.
+
+`open` launches the exact saved URL in the default browser. `copy` writes it to the operating system clipboard. `download` decodes the selected URL and saves its `.md` content in the selected directory; use `--overwrite` to replace an existing file. `prompt` prints an English learning prompt with all divided links and final instructions. `copy-prompt [id-or-name]` copies only that prompt; without an identifier it asks for a registered document by UUID. `prompt --copy` remains available as an equivalent shortcut. Interactive commands ask for the saved item or destination when an argument is omitted.
 
 Configuration and link-store writes are atomic and use mode `0600` on compatible systems. Select another configuration or link store for one invocation with an option or environment variable:
 

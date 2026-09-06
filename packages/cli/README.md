@@ -6,10 +6,12 @@ Generate self-contained complete-document and divided-part URLs from local `.md`
 npx @vidigal-code/skillslink@latest generate file.md
 npx @vidigal-code/skillslink@latest publish file.md
 npx @vidigal-code/skillslink@latest list
+npx @vidigal-code/skillslink@latest list <id-or-name>
 npx @vidigal-code/skillslink@latest open file.md
 npx @vidigal-code/skillslink@latest copy file.md
 npx @vidigal-code/skillslink@latest download file.md --directory ./recovered
 npx @vidigal-code/skillslink@latest prompt file.md
+npx @vidigal-code/skillslink@latest copy-prompt
 npx @vidigal-code/skillslink@latest remove file.md
 ```
 
@@ -96,11 +98,13 @@ skillslink generate guide.md --json
 
 In an interactive terminal, the file argument can be omitted. The CLI then opens an `@clack/prompts` path selector and asks whether to register the generated links. Each parent record contains the complete URL, UUID, file name, media type, ISO creation date and time, and nested part records. Every part has a separately checked UUID, title, byte size, Markdown name, and complete URL.
 
-`skillslink list` renders each parent followed by its nested part table and an English AI prompt containing the complete divided URLs. Long table values are abbreviated with `...`; `skillslink list --json` returns the complete hierarchy. Use `open` to launch a registered URL, `copy` to place it on the system clipboard, and `download` (alias `get`) to decode and save the selected Markdown file. These commands accept a parent or part UUID, URL, generated file name, or part title and show an interactive selector when the argument is omitted. Downloads accept `--directory <path>` or prompt for a directory in an interactive terminal. In non-interactive mode, an existing destination is rejected unless `--overwrite` is selected; in interactive mode, the CLI can ask for confirmation before replacing it.
+In an interactive terminal, `skillslink list` asks for one parent document by its full UUID. It prints only the selected document's metadata, abbreviated complete URL, and English AI learning prompt; the full prompt URLs are not repeated in a part table. `skillslink list <id-or-name>` selects directly. `skillslink list --json` remains prompt-free and returns every complete hierarchy, while adding an identifier returns a one-document array.
+
+Use `open` to launch a registered URL, `copy` to place it on the system clipboard, and `download` (alias `get`) to decode and save the selected Markdown file. These commands accept a parent or part UUID, URL, generated file name, or part title and show an interactive selector when the argument is omitted. Downloads accept `--directory <path>` or prompt for a directory in an interactive terminal. In non-interactive mode, an existing destination is rejected unless `--overwrite` is selected; in interactive mode, the CLI can ask for confirmation before replacing it.
 
 The default `list` mode is `divided`. Override one call with `--mode divided|complete|all`, or persist a default with `skillslink config --list-mode divided|complete|all`. The `completeLinks` and `dividedLinks` capability settings both default to `true`, and `promptLanguage` is `en`. The English prompt follows the selected list mode, except that a complete URL above the 8000-character compatibility limit is always omitted in favor of its smaller parts.
 
-`skillslink prompt <id-or-name>` prints the same English AI learning prompt. Add `--copy` to place it on the clipboard. The full value remains available in `links.json` and `list --json`.
+`skillslink prompt <id-or-name>` prints the same English AI learning prompt. `skillslink copy-prompt [id-or-name]` copies only the divided-link prompt with all of its English instructions; when the identifier is omitted, it opens the document UUID selector. `prompt --copy` remains an equivalent shortcut. The full saved records remain available in `links.json` and `list --json`.
 
 Only `.md` is a document input. Text files and every other extension are rejected.
 

@@ -1,7 +1,6 @@
 import { randomUUID } from "node:crypto";
 
 import {
-  createAiLearningPrompt,
   isRecommendedPortableUrl,
   LinkFormatError,
   normalizeSiteUrl,
@@ -50,8 +49,10 @@ import {
   type StorageSession,
 } from "./create-storage-session";
 import {
+  createRegisteredLinkPrompt,
   formatGeneratedLink,
   formatLinkList,
+  formatSelectedLink,
   standardOutput,
   type CliOutput,
 } from "./output";
@@ -116,6 +117,38 @@ export function createProgram(
         ? {}
         : { runtime: services.storageRuntime }),
     });
+  const runPromptCommand = async (
+    identifier: string | undefined,
+    copyPrompt: boolean,
+    command: Command,
+  ): Promise<void> => {
+    const interactive = isInteractiveSession();
+    const storage = await resolveStorage(
+      getGlobalOptions(command),
+      interactive,
+    );
+    if (storage === undefined) {
+      return;
+    }
+    const link = await resolveRegisteredDocument(
+      await storage.registry.read(),
+      identifier,
+      copyPrompt ? "copy a prompt for" : "create a prompt for",
+      interactive,
+    );
+    if (link === undefined) {
+      return;
+    }
+
+    const prompt = createRegisteredLinkPrompt(link, "divided");
+    if (copyPrompt) {
+      await services.copyText(prompt);
+      output.write(`AI prompt copied: ${link.name} (${link.id})`);
+      return;
+    }
+
+    output.write(prompt);
+  };
   program
     .name("skillslink")
     .description("Read Markdown files and turn them into self-contained URLs.")
@@ -231,34 +264,62 @@ export function createProgram(
     );
 
   program
-    .command("list")
+    .command("list [id-or-name]")
     .alias("ls")
-    .description("show registered links as a compact table")
+    .description("select and show one registered document")
     .option("--json", "print complete records as JSON")
     .option(
       "--mode <mode>",
       "show divided, complete, or all links (default: configured mode)",
     )
-    .action(async (options: ListOptions, command: Command) => {
-      const storage = await resolveStorage(
-        getGlobalOptions(command),
-        isInteractiveSession(options.json === true),
-      );
-      if (storage === undefined) {
-        return;
-      }
-      const registry = storage.registry;
-      const { links, settings } = await registry.read();
-      output.write(
-        options.json === true
-          ? JSON.stringify(links, null, 2)
-          : formatLinkList(links, {
-              mode: parseListDisplayMode(
-                options.mode ?? settings.listDisplayMode,
-              ),
-            }),
-      );
-    });
+    .action(
+      async (
+        identifier: string | undefined,
+        options: ListOptions,
+        command: Command,
+      ) => {
+        const interactive = isInteractiveSession(options.json === true);
+        const storage = await resolveStorage(
+          getGlobalOptions(command),
+          interactive,
+        );
+        if (storage === undefined) {
+          return;
+        }
+        const registrySnapshot = await storage.registry.read();
+        const displayMode = parseListDisplayMode(
+          options.mode ?? registrySnapshot.settings.listDisplayMode,
+        );
+        const shouldSelectOne =
+          identifier !== undefined ||
+          (interactive && registrySnapshot.links.length > 0);
+        const selectedLink = shouldSelectOne
+          ? await resolveRegisteredDocument(
+              registrySnapshot,
+              identifier,
+              "list",
+              interactive,
+            )
+          : undefined;
+        if (shouldSelectOne && selectedLink === undefined) {
+          return;
+        }
+
+        const visibleLinks =
+          selectedLink === undefined ? registrySnapshot.links : [selectedLink];
+        output.write(
+          options.json === true
+            ? JSON.stringify(visibleLinks, null, 2)
+            : selectedLink === undefined
+              ? formatLinkList(visibleLinks, {
+                  mode: displayMode,
+                })
+              : formatSelectedLink(selectedLink, {
+                  mode: displayMode,
+                }),
+        );
+      },
+    );
 
   program
     .command("open [id-or-name]")
@@ -386,35 +447,20 @@ export function createProgram(
         options: PromptOptions,
         command: Command,
       ) => {
-        const storage = await resolveStorage(
-          getGlobalOptions(command),
-          isInteractiveSession(),
-        );
-        if (storage === undefined) {
-          return;
-        }
-        const registry = storage.registry;
-        const link = await resolveRegisteredDocument(
-          await registry.read(),
-          identifier,
-          "create a prompt for",
-          isInteractiveSession(),
-        );
-        if (link === undefined) {
-          return;
-        }
+        await runPromptCommand(identifier, options.copy === true, command);
+      },
+    );
 
-        const prompt = createAiLearningPrompt({
-          fullUrl: link.url,
-          partUrls: link.parts.map((part) => part.url),
-        });
-        if (options.copy === true) {
-          await services.copyText(prompt);
-          output.write(`AI prompt copied: ${link.name} (${link.id})`);
-          return;
-        }
-
-        output.write(prompt);
+  program
+    .command("copy-prompt [id-or-name]")
+    .description("select a document and copy only its English AI prompt")
+    .action(
+      async (
+        identifier: string | undefined,
+        _options: unknown,
+        command: Command,
+      ) => {
+        await runPromptCommand(identifier, true, command);
       },
     );
 

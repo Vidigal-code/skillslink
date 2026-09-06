@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import type { GeneratedLink } from "../domain/registry";
-import { abbreviate, formatGeneratedLink, formatLinkList } from "./output";
+import {
+  abbreviate,
+  formatGeneratedLink,
+  formatLinkList,
+  formatSelectedLink,
+} from "./output";
 
 const link: GeneratedLink = {
   id: "00000000-0000-4000-8000-000000000001",
@@ -47,6 +52,21 @@ describe("CLI output", () => {
     expect(table).toContain(link.parts[0]?.url);
   });
 
+  it("renders one selected document with metadata and an English prompt", () => {
+    const selected = formatSelectedLink(link);
+
+    expect(selected).toContain("SELECTED DOCUMENT");
+    expect(selected).toContain(`ID: ${link.id}`);
+    expect(selected).toContain(`File: ${link.name}`);
+    expect(selected).toContain("Created: 2026-09-06T12:34:56Z");
+    expect(selected).toContain("AI PROMPT (DIVIDED)");
+    expect(selected).toContain(
+      "Learn this skill by opening every SkillsLink page URL below in order:",
+    );
+    expect(selected).toContain(link.parts[0]?.url);
+    expect(selected).not.toContain("PARTS (1)");
+  });
+
   it("normalizes control characters before abbreviating a cell", () => {
     expect(abbreviate("line\nvalue", 20)).toBe("line value");
   });
@@ -71,6 +91,10 @@ describe("CLI output", () => {
     expect(completeFallback).not.toContain("AI PROMPT (COMPLETE)");
     expect(allFallback).toContain("AI PROMPT (DIVIDED)");
     expect(allFallback).not.toContain("AI PROMPT (ALL)");
+    const selectedFallback = formatSelectedLink(oversizedLink, { mode: "all" });
+    expect(selectedFallback).toContain("AI PROMPT (DIVIDED)");
+    expect(selectedFallback).not.toContain(oversizedLink.url);
+    expect(selectedFallback).toContain(oversizedLink.parts[0]?.url);
   });
 
   it("supports complete and all list modes for compatible URLs", () => {

@@ -41,6 +41,11 @@ describe("registered-link commands", () => {
       copyText: vi.fn(async (value: string) => {
         copiedValues.push(value);
       }),
+      storageRuntime: {
+        environment: {},
+        homeDirectory: directory,
+        legacyRegistryFilePath: join(directory, "missing-legacy-registry.json"),
+      },
     };
     const messages: string[] = [];
     const output: CliOutput = {

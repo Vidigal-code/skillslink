@@ -38,6 +38,7 @@ export type InteractiveCommand =
   | "copy"
   | "download"
   | "prompt"
+  | "copy-prompt"
   | "remove"
   | "config"
   | "where";
@@ -55,11 +56,12 @@ export async function resolveInteractiveCommand(): Promise<
     message: "What would you like to do?",
     options: [
       { value: "generate", label: "Generate a document link" },
-      { value: "list", label: "List registered links" },
+      { value: "list", label: "Show one registered document" },
       { value: "open", label: "Open a registered link" },
       { value: "copy", label: "Copy a registered link" },
       { value: "download", label: "Download a registered document" },
       { value: "prompt", label: "Create an AI learning prompt" },
+      { value: "copy-prompt", label: "Copy an AI learning prompt" },
       { value: "remove", label: "Remove a registered link" },
       { value: "config", label: "Show configuration" },
       { value: "where", label: "Show link-store path" },
@@ -212,11 +214,11 @@ export async function resolveRegisteredDocument(
   }
 
   const result = await select<string>({
-    message: `Choose a document to ${action}`,
+    message: `Choose a document ID to ${action}`,
     options: registry.links.map((link) => ({
       value: link.id,
-      label: link.name,
-      hint: `${formatTimestamp(link.createdAt)} · ${abbreviate(link.url, LINK_CHOICE_PREVIEW_LENGTH)}`,
+      label: link.id,
+      hint: `${link.name} | ${formatTimestamp(link.createdAt)}`,
     })),
   });
   const selectedId = handleCancellation(result, "Command cancelled.");

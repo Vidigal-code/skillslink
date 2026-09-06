@@ -8,7 +8,7 @@ The behavior has these stable seams:
 - `JsonConfiguration` and `JsonConfigurationLocation`: persistent settings, the selected links file, and a custom configuration locator survive process restarts through strict versioned schemas.
 - `JsonRegistry`: nested generated links persist independently in `links.json`, duplicate IDs are rejected, and link writes do not rewrite `config.json`. Combined registry schemas 1 and 2 remain readable for migration.
 - initial CLI storage setup: mocked `@clack/prompts`, injected environment and home paths, and temporary directories verify default setup, custom-path rediscovery, cancellation without writes, and prompt-free non-interactive or JSON execution.
-- registered-link commands: a saved parent or part can be found by UUID, URL, generated name, or title; displayed in nested compact tables; opened; copied; and recovered into an exact local file.
+- registered-link commands: an interactive list selects one parent by its visible UUID and prints only its concise summary and English learning prompt; JSON keeps the complete hierarchy. The dedicated `copy-prompt` flow copies only the English divided-link prompt. Saved parents and parts can be found by UUID, URL, generated name, or title, then opened, copied, or recovered into an exact local file.
 - static web output: every repository snapshot appears in pre-rendered HTML, its raw file preserves the exact UTF-8 source, and `llms.txt` indexes both routes.
 
 Storage tests use injected environments and temporary home or legacy paths so `SKILLSLINK_CONFIG`, `SKILLSLINK_STORE`, `SKILLSLINK_SITE_URL`, a real `active-config.json`, or developer registry data cannot affect the cases under test. Temporary cleanup rejects paths outside the operating system's test directory.
