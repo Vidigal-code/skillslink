@@ -252,7 +252,7 @@ The web application uses `next-yak` `^9.7.0`, the Next.js App Router, static exp
 Every push to `main` starts independent GitHub Actions workflows:
 
 - `deploy-pages.yml` validates the project, exports the site, and deploys the artifact to GitHub Pages;
-- `publish-npm.yml` validates and packs the CLI, assigns an immutable `0.<run>.<attempt>` version, and publishes with npm provenance through OIDC.
+- `publish-npm.yml` validates and packs the CLI, publishes the declared stable version when it is newer than npm, and then assigns the next available patch version from the npm registry on later pushes. Every publication includes npm provenance through OIDC.
 
 The npm package must have a Trusted Publisher configured for repository `Vidigal-code/skillslink` and workflow `publish-npm.yml`, with direct `npm publish` selected as an allowed action. After that one-time npm configuration, the workflow needs no long-lived npm token.
 

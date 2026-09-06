@@ -1,6 +1,6 @@
 {
   "name": "skillslink-workspace",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "description": "CLI and GitHub Pages viewer for AI-readable Markdown links.",
   "workspaces": [
@@ -18,7 +18,8 @@
     "lint": "eslint eslint.config.mjs apps packages scripts",
     "pack:check": "npm pack --workspace @vidigal-code/skillslink --dry-run",
     "release:version": "node scripts/set-release-version.mjs",
-    "test": "npm run test --workspaces --if-present",
+    "test": "npm run test:release && npm run test --workspaces --if-present",
+    "test:release": "node --test scripts/release-version.test.mjs",
     "typecheck": "npm run typecheck --workspaces --if-present"
   },
   "engines": {

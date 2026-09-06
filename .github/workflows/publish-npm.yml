@@ -42,8 +42,7 @@ jobs:
         id: latest
         run: echo "version=$(npm view @vidigal-code/skillslink version)" >> "$GITHUB_OUTPUT"
 
-      - name: Assign immutable release version
-        id: release
+      - name: Assign stable release version
         env:
           NPM_LATEST_VERSION: ${{ steps.latest.outputs.version }}
         run: npm run release:version
@@ -55,9 +54,4 @@ jobs:
         run: npm run pack:check
 
       - name: Publish package with provenance
-        if: steps.release.outputs.publish == 'true'
         run: npm publish --workspace @vidigal-code/skillslink --access public
-
-      - name: Report an already superseded release
-        if: steps.release.outputs.publish != 'true'
-        run: echo "Skipped ${{ steps.release.outputs.version }} because npm already has an equal or newer release."

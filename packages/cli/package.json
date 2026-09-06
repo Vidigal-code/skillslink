@@ -1,6 +1,6 @@
 {
   "name": "@vidigal-code/skillslink",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Generate self-contained URLs and divided links from local Markdown files.",
   "keywords": [
     "markdown",
@@ -50,7 +50,7 @@
     "zod": "^4.5.4"
   },
   "devDependencies": {
-    "@skillslink/link-format": "0.1.0",
+    "@skillslink/link-format": "1.0.0",
     "@types/node": "^22.19.0",
     "tsup": "^8.5.1",
     "vitest": "^5.0.0"

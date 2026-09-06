@@ -333,11 +333,11 @@ Commands:
   where                                show the path to the links.json link store
 ```
 
-Every command also accepts `--help`, for example `skillslink list --help`. The version comes from the installed package metadata; this example reflects version `0.1.0`:
+Every command also accepts `--help`, for example `skillslink list --help`. The version comes from the installed package metadata; this example reflects the first stable release:
 
 ```console
 $ skillslink --version
-0.1.0
+1.0.0
 ```
 
 ## Interactive entry point
