@@ -2,7 +2,7 @@
 
 All notable changes to SkillsLink are documented in this file. The project follows [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.0.1] - 2026-10-02
 
 ### Added
 
@@ -53,5 +53,5 @@ All notable changes to SkillsLink are documented in this file. The project follo
 - Local configuration and link records use private file permissions where the operating system supports them.
 - CLI generation and browser rendering require no GitHub token or document upload API.
 
-[Unreleased]: https://github.com/Vidigal-code/skillslink/compare/v1.0.0...HEAD
+[1.0.1]: https://github.com/Vidigal-code/skillslink/releases/tag/v1.0.1
 [1.0.0]: https://github.com/Vidigal-code/skillslink/releases/tag/v1.0.0
