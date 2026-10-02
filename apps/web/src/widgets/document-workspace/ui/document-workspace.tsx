@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, type SubmitEvent } from "react";
 import { Download, Pencil, Save, X } from "lucide-react";
 import { styled } from "next-yak";
 
@@ -259,7 +259,7 @@ export function DocumentWorkspace({
     .replace("{current}", String(byteLength))
     .replace("{maximum}", String(MAX_DOCUMENT_BYTES));
 
-  function updateUrl(event: FormEvent<HTMLFormElement>): void {
+  function updateUrl(event: SubmitEvent<HTMLFormElement>): void {
     event.preventDefault();
 
     try {

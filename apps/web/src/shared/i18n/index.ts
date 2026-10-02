@@ -19,7 +19,8 @@ export const LocaleLang: Record<LanguageCode, LocaleDictionary> = {
 };
 
 export function isLanguageCode(value: string): value is LanguageCode {
-  return LANGUAGE_CODES.some((language) => language === value);
+  const languageCodes: readonly string[] = LANGUAGE_CODES;
+  return languageCodes.includes(value);
 }
 
 export function resolveLanguageCode(value: string | undefined): LanguageCode {

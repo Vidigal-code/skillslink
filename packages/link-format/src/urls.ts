@@ -51,6 +51,13 @@ export function normalizeSiteUrl(value: string): string {
   return url.toString();
 }
 
+export function normalizeBasePath(value: string | undefined): string {
+  const segments = (value ?? "")
+    .split("/")
+    .filter((segment) => segment.length > 0);
+  return segments.length === 0 ? "" : `/${segments.join("/")}`;
+}
+
 function parseSiteUrl(value: string): URL {
   try {
     const url = new URL(value);
@@ -76,8 +83,7 @@ function parseSiteUrl(value: string): URL {
 }
 
 function joinUrlPath(basePath: string, ...segments: readonly string[]): string {
-  const normalizedBase = basePath.replace(/\/+$/u, "");
-  return `${normalizedBase}/${segments.map(encodeURIComponent).join("/")}`;
+  return `${normalizeBasePath(basePath)}/${segments.map(encodeURIComponent).join("/")}`;
 }
 
 function ensureTrailingSlash(pathname: string): string {

@@ -56,7 +56,7 @@ function parseVersion(value, pattern, label) {
 
   return {
     value,
-    parts: match.slice(1, 4).map((part) => BigInt(part)),
+    parts: match.slice(1, 4).map(BigInt),
     prerelease: match[4] !== undefined,
   };
 }

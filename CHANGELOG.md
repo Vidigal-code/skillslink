@@ -2,6 +2,22 @@
 
 All notable changes to SkillsLink are documented in this file. The project follows [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- Workspace-wide Vitest coverage with an LCOV report through the `test:coverage` script.
+
+### Changed
+
+- Base path normalization is shared by the web app, its build configuration, and runtime URL resolution through `@skillslink/link-format`.
+- The static export check is written in TypeScript and reuses the web app's snapshot repository, languages, routes, icon path, and theme settings.
+
+### Fixed
+
+- Line splitting, Base64URL padding removal, and base path normalization run in linear time instead of using backtracking regular expressions.
+- The static export check normalizes `NEXT_PUBLIC_BASE_PATH` before verifying asset paths, so values with trailing slashes are accepted.
+
 ## [1.0.0] - 2026-09-06
 
 ### Added
@@ -33,4 +49,5 @@ All notable changes to SkillsLink are documented in this file. The project follo
 - Local configuration and link records use private file permissions where the operating system supports them.
 - CLI generation and browser rendering require no GitHub token or document upload API.
 
+[Unreleased]: https://github.com/Vidigal-code/skillslink/compare/v1.0.0...HEAD
 [1.0.0]: https://github.com/Vidigal-code/skillslink/releases/tag/v1.0.0

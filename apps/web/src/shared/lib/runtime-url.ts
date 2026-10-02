@@ -1,5 +1,6 @@
 "use client";
 
+import { normalizeBasePath } from "@skillslink/link-format";
 import { useSyncExternalStore } from "react";
 
 import { PUBLIC_BASE_PATH, SITE_URL } from "../config/site";
@@ -50,14 +51,6 @@ export function useRuntimeUrl(configuredUrl: string): string {
 
 function isLocalHostName(hostname: string): boolean {
   return LOCAL_HOST_NAMES.has(hostname) || hostname.endsWith(".localhost");
-}
-
-function normalizeBasePath(value: string): string {
-  if (value === "" || value === "/") {
-    return "";
-  }
-
-  return `/${value.replace(/^\/+|\/+$/gu, "")}`;
 }
 
 function subscribeToStableLocation(): () => void {

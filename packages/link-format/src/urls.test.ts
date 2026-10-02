@@ -4,6 +4,7 @@ import {
   createRawDocumentUrl,
   createViewerUrl,
   extractDocumentPayloadFromUrl,
+  normalizeBasePath,
   normalizeSiteUrl,
 } from "./urls";
 
@@ -62,5 +63,27 @@ describe("document URLs", () => {
     expect(
       normalizeSiteUrl("https://example.com/docs?ignored=true#fragment"),
     ).toBe("https://example.com/docs/");
+  });
+});
+
+describe("base path normalization", () => {
+  it.each([
+    [undefined, ""],
+    ["", ""],
+    ["/", ""],
+    ["//", ""],
+    ["skillslink", "/skillslink"],
+    ["/skillslink/", "/skillslink"],
+    ["///docs//skillslink///", "/docs/skillslink"],
+  ])("normalizes %j to %j", (value, expected) => {
+    expect(normalizeBasePath(value)).toBe(expected);
+  });
+
+  it("normalizes a base path surrounded by long runs of slashes", () => {
+    const slashes = "/".repeat(100_000);
+
+    expect(normalizeBasePath(`${slashes}skillslink${slashes}`)).toBe(
+      "/skillslink",
+    );
   });
 });

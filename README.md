@@ -245,6 +245,8 @@ npm run pack:check
 
 The [CLI command test guide](./packages/cli/tests/README.md) contains the automated command matrix and simulated terminal sessions for manual acceptance testing.
 
+`npm run test:coverage` runs every workspace through Vitest and writes an LCOV report to `coverage/lcov.info`.
+
 The web application uses `next-yak` `^9.7.0`, the Next.js App Router, static export, strict TypeScript, and Feature-Sliced Design import direction.
 
 ## Automated releases

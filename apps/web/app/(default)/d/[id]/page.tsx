@@ -23,12 +23,12 @@ export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
   const { id } = await params;
-  return createDocumentRouteMetadata(id, DEFAULT_LANGUAGE, false);
+  return createDocumentRouteMetadata(id);
 }
 
 export default async function Page({ params }: PageProps) {
   const { id } = await params;
-  const data = await getDocumentRouteData(id, DEFAULT_LANGUAGE, false);
+  const data = await getDocumentRouteData(id);
   if (data === undefined) {
     notFound();
   }

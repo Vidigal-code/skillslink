@@ -12,13 +12,17 @@ import {
   resolveDefaultSettings,
   resolveLegacyRegistryPath,
   resolveRegistryOverride,
+  type DefaultStoragePaths,
 } from "../config/runtime-config";
 import { CliError } from "../domain/cli-error";
 import type { CliConfiguration } from "../domain/configuration";
 import { JsonConfigurationLocation } from "../infrastructure/json-configuration-location";
 import { JsonConfiguration } from "../infrastructure/json-configuration";
 import { JsonRegistry } from "../infrastructure/json-registry";
-import { resolveInitialStoragePaths } from "./interactive";
+import {
+  resolveInitialStoragePaths,
+  type InitialStoragePaths,
+} from "./interactive";
 import type { CliOutput } from "./output";
 
 export interface StorageSelectors {
@@ -32,23 +36,64 @@ export interface StorageRuntime {
   readonly legacyRegistryFilePath?: string;
 }
 
+export interface StorageSessionOptions {
+  readonly interactive: boolean;
+  readonly output: CliOutput;
+  readonly runtime?: StorageRuntime;
+}
+
 export interface StorageSession {
   readonly configuration: JsonConfiguration;
   readonly configFilePath: string;
   readonly registry: JsonRegistry;
 }
 
+interface StorageTarget {
+  readonly configFilePath: string;
+  readonly implicitLinksFilePath: string;
+  readonly configuration: JsonConfiguration;
+  readonly configurationExists: boolean;
+}
+
+interface StoragePlan {
+  readonly environment: NodeJS.ProcessEnv;
+  readonly defaults: DefaultStoragePaths;
+  readonly location: JsonConfigurationLocation;
+  readonly configOverride: string | undefined;
+  readonly linksOverride: string | undefined;
+  readonly target: StorageTarget;
+}
+
+interface StorageTargetInput extends Pick<
+  StoragePlan,
+  "defaults" | "configOverride" | "linksOverride"
+> {
+  readonly locatedConfigFile: string | undefined;
+  readonly runtime: StorageRuntime | undefined;
+}
+
+interface StorageTargetPaths
+  extends
+    Pick<StorageTarget, "configFilePath" | "implicitLinksFilePath">,
+    Pick<StoragePlan, "linksOverride"> {}
+
 export async function createStorageSession(
   selectors: StorageSelectors,
-  options: {
-    readonly interactive: boolean;
-    readonly output: CliOutput;
-    readonly runtime?: StorageRuntime;
-  },
+  options: StorageSessionOptions,
 ): Promise<StorageSession | undefined> {
-  const environment = options.runtime?.environment ?? process.env;
+  const plan = await planStorage(selectors, options.runtime);
+  return options.interactive && requiresInitialSetup(plan)
+    ? setUpInitialStorage(plan, options.output)
+    : openStorage(plan);
+}
+
+async function planStorage(
+  selectors: StorageSelectors,
+  runtime: StorageRuntime | undefined,
+): Promise<StoragePlan> {
+  const environment = runtime?.environment ?? process.env;
   const defaults = resolveDefaultStoragePaths(
-    options.runtime?.homeDirectory ?? homedir(),
+    runtime?.homeDirectory ?? homedir(),
   );
   const configOverride = resolveConfigurationOverride(
     selectors.config,
@@ -60,140 +105,210 @@ export async function createStorageSession(
   );
   const locatedConfigFile =
     configOverride === undefined ? await location.read() : undefined;
-  let configFilePath =
-    configOverride ?? locatedConfigFile ?? defaults.configFilePath;
-  let implicitLinksFilePath =
-    locatedConfigFile === undefined
-      ? defaults.linksFilePath
-      : join(dirname(locatedConfigFile), LINKS_FILE_NAME);
-  let configuration = createConfiguration(
+  const target = await resolveStorageTarget({
+    defaults,
+    configOverride,
+    linksOverride,
+    locatedConfigFile,
+    runtime,
+  });
+
+  return {
+    environment,
+    defaults,
+    location,
+    configOverride,
+    linksOverride,
+    target,
+  };
+}
+
+async function resolveStorageTarget(
+  input: StorageTargetInput,
+): Promise<StorageTarget> {
+  const { defaults, configOverride, linksOverride, locatedConfigFile } = input;
+  const target = await inspectStorageTarget({
+    configFilePath:
+      configOverride ?? locatedConfigFile ?? defaults.configFilePath,
+    implicitLinksFilePath:
+      locatedConfigFile === undefined
+        ? defaults.linksFilePath
+        : join(dirname(locatedConfigFile), LINKS_FILE_NAME),
+    linksOverride,
+  });
+  const usesDefaultLocation =
+    configOverride === undefined && locatedConfigFile === undefined;
+  if (target.configurationExists || !usesDefaultLocation) {
+    return target;
+  }
+
+  if (linksOverride !== undefined) {
+    return inspectStorageTarget({
+      configFilePath: join(dirname(linksOverride), CONFIGURATION_FILE_NAME),
+      implicitLinksFilePath: target.implicitLinksFilePath,
+      linksOverride,
+    });
+  }
+
+  const implicitLinksFilePath = await resolveFirstRunLinksFile(
+    defaults.linksFilePath,
+    input.runtime,
+  );
+  return {
+    ...target,
+    implicitLinksFilePath,
+    configuration: createConfiguration(
+      target.configFilePath,
+      implicitLinksFilePath,
+    ),
+  };
+}
+
+async function inspectStorageTarget({
+  configFilePath,
+  implicitLinksFilePath,
+  linksOverride,
+}: StorageTargetPaths): Promise<StorageTarget> {
+  const configuration = createConfiguration(
     configFilePath,
     linksOverride ?? implicitLinksFilePath,
   );
-  let configurationExists = await configuration.exists();
-  if (
-    !configurationExists &&
-    configOverride === undefined &&
-    locatedConfigFile === undefined &&
-    linksOverride !== undefined
-  ) {
-    configFilePath = join(dirname(linksOverride), CONFIGURATION_FILE_NAME);
-    configuration = createConfiguration(configFilePath, linksOverride);
-    configurationExists = await configuration.exists();
-  }
-  if (
-    !configurationExists &&
-    configOverride === undefined &&
-    locatedConfigFile === undefined &&
-    linksOverride === undefined
-  ) {
-    const defaultLinksExist = await fileExists(defaults.linksFilePath);
-    if (!defaultLinksExist) {
-      const legacyRegistryFilePath =
-        options.runtime?.legacyRegistryFilePath ?? resolveLegacyRegistryPath();
-      if (await fileExists(legacyRegistryFilePath)) {
-        implicitLinksFilePath = legacyRegistryFilePath;
-      }
-    }
-  }
-  if (!configurationExists) {
-    configuration = createConfiguration(
-      configFilePath,
-      linksOverride ?? implicitLinksFilePath,
-    );
+  return {
+    configFilePath,
+    implicitLinksFilePath,
+    configuration,
+    configurationExists: await configuration.exists(),
+  };
+}
+
+async function resolveFirstRunLinksFile(
+  defaultLinksFilePath: string,
+  runtime: StorageRuntime | undefined,
+): Promise<string> {
+  if (await fileExists(defaultLinksFilePath)) {
+    return defaultLinksFilePath;
   }
 
-  if (
-    options.interactive &&
-    !configurationExists &&
-    configOverride === undefined &&
-    linksOverride === undefined
-  ) {
-    const selected = await resolveInitialStoragePaths({
-      configFilePath,
-      linksFilePath: implicitLinksFilePath,
-    });
-    if (selected === undefined) {
-      return undefined;
-    }
-    assertStoragePathsAreDistinct(
-      selected.configFilePath,
-      selected.linksFilePath,
-      defaults.configLocationFilePath,
-    );
+  const legacyRegistryFilePath =
+    runtime?.legacyRegistryFilePath ?? resolveLegacyRegistryPath();
+  return (await fileExists(legacyRegistryFilePath))
+    ? legacyRegistryFilePath
+    : defaultLinksFilePath;
+}
 
-    configuration = createConfiguration(
-      selected.configFilePath,
-      selected.linksFilePath,
-    );
-    const registry = createRegistry({
-      configuration,
-      linksFilePath: selected.linksFilePath,
-      environment,
-      persistConfigurationOnWrite: true,
-    });
-    const selectedConfigurationExists = await configuration.exists();
-    let configurationToCreate: CliConfiguration | undefined;
-    if (selectedConfigurationExists) {
-      const existingConfiguration = await configuration.read();
-      if (
-        normalizePathForComparison(existingConfiguration.linksFile) !==
-        normalizePathForComparison(selected.linksFilePath)
-      ) {
-        throw new CliError(
-          "CONFIGURATION_ERROR",
-          `The existing configuration at ${selected.configFilePath} selects a different link store.`,
-        );
-      }
-    } else {
-      const current = await registry.read();
-      const initialConfiguration = await configuration.read();
-      configurationToCreate = {
-        ...initialConfiguration,
-        settings: {
-          ...initialConfiguration.settings,
-          ...current.settings,
-        },
-      };
-    }
+function requiresInitialSetup(plan: StoragePlan): boolean {
+  return (
+    !plan.target.configurationExists &&
+    plan.configOverride === undefined &&
+    plan.linksOverride === undefined
+  );
+}
 
-    if (
-      normalizePathForComparison(selected.configFilePath) ===
-      normalizePathForComparison(defaults.configFilePath)
-    ) {
-      await location.remove();
-    } else {
-      await location.write(selected.configFilePath);
+async function setUpInitialStorage(
+  plan: StoragePlan,
+  output: CliOutput,
+): Promise<StorageSession | undefined> {
+  const selected = await resolveInitialStoragePaths({
+    configFilePath: plan.target.configFilePath,
+    linksFilePath: plan.target.implicitLinksFilePath,
+  });
+  if (selected === undefined) {
+    return undefined;
+  }
+  assertStoragePathsAreDistinct(
+    selected.configFilePath,
+    selected.linksFilePath,
+    plan.defaults.configLocationFilePath,
+  );
+
+  const configuration = createConfiguration(
+    selected.configFilePath,
+    selected.linksFilePath,
+  );
+  const registry = createRegistry({
+    configuration,
+    linksFilePath: selected.linksFilePath,
+    environment: plan.environment,
+    persistConfigurationOnWrite: true,
+  });
+  const configurationToCreate = await prepareInitialConfiguration(
+    configuration,
+    registry,
+    selected,
+  );
+  await rememberConfigurationLocation(plan, selected.configFilePath);
+  if (configurationToCreate !== undefined) {
+    await configuration.create(configurationToCreate);
+  }
+  await registry.initialize();
+  output.write(`Configuration saved: ${selected.configFilePath}`);
+  output.write(`Link store ready: ${selected.linksFilePath}`);
+
+  return {
+    configuration,
+    configFilePath: selected.configFilePath,
+    registry,
+  };
+}
+
+async function prepareInitialConfiguration(
+  configuration: JsonConfiguration,
+  registry: JsonRegistry,
+  selected: InitialStoragePaths,
+): Promise<CliConfiguration | undefined> {
+  if (await configuration.exists()) {
+    const existingConfiguration = await configuration.read();
+    if (!isSamePath(existingConfiguration.linksFile, selected.linksFilePath)) {
+      throw new CliError(
+        "CONFIGURATION_ERROR",
+        `The existing configuration at ${selected.configFilePath} selects a different link store.`,
+      );
     }
-    if (configurationToCreate !== undefined) {
-      await configuration.create(configurationToCreate);
-    }
-    await registry.initialize();
-    options.output.write(`Configuration saved: ${selected.configFilePath}`);
-    options.output.write(`Link store ready: ${selected.linksFilePath}`);
-    return {
-      configuration,
-      configFilePath: selected.configFilePath,
-      registry,
-    };
+    return undefined;
   }
 
+  const current = await registry.read();
+  const initialConfiguration = await configuration.read();
+  return {
+    ...initialConfiguration,
+    settings: {
+      ...initialConfiguration.settings,
+      ...current.settings,
+    },
+  };
+}
+
+async function rememberConfigurationLocation(
+  plan: StoragePlan,
+  configFilePath: string,
+): Promise<void> {
+  if (isSamePath(configFilePath, plan.defaults.configFilePath)) {
+    await plan.location.remove();
+    return;
+  }
+
+  await plan.location.write(configFilePath);
+}
+
+async function openStorage(plan: StoragePlan): Promise<StorageSession> {
+  const { configuration, configurationExists } = plan.target;
   const config = await configuration.read();
-  const linksFilePath = linksOverride ?? config.linksFile;
+  const linksFilePath = plan.linksOverride ?? config.linksFile;
   assertStoragePathsAreDistinct(
     configuration.filePath,
     linksFilePath,
-    defaults.configLocationFilePath,
+    plan.defaults.configLocationFilePath,
   );
+
   return {
     configuration,
     configFilePath: configuration.filePath,
     registry: createRegistry({
       configuration,
       linksFilePath,
-      environment,
+      environment: plan.environment,
       persistConfigurationOnWrite:
-        linksOverride === undefined || !configurationExists,
+        plan.linksOverride === undefined || !configurationExists,
     }),
   };
 }
@@ -210,6 +325,10 @@ async function fileExists(filePath: string): Promise<boolean> {
       cause: error,
     });
   }
+}
+
+function isSamePath(left: string, right: string): boolean {
+  return normalizePathForComparison(left) === normalizePathForComparison(right);
 }
 
 function createConfiguration(
@@ -242,7 +361,7 @@ function assertStoragePathsAreDistinct(
   locationFilePath: string,
 ): void {
   const paths = [configFilePath, linksFilePath, locationFilePath].map(
-    normalizePathForComparison,
+    (filePath) => normalizePathForComparison(filePath),
   );
   if (new Set(paths).size !== paths.length) {
     throw new CliError(

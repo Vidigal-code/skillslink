@@ -1,6 +1,10 @@
 import type { LanguageCode } from "@/shared/i18n";
 
-export type SiteRoute = "" | "about" | "upload" | "view" | `d/${string}`;
+export const STATIC_PAGE_ROUTES = ["about", "upload", "view"] as const;
+
+export type StaticPageRoute = (typeof STATIC_PAGE_ROUTES)[number];
+
+export type SiteRoute = "" | StaticPageRoute | `d/${string}`;
 
 export function createLocalizedPath(
   language: LanguageCode,

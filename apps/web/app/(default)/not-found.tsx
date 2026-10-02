@@ -7,7 +7,7 @@ export default function NotFound() {
     <ViewPage
       language={DEFAULT_LANGUAGE}
       localized={false}
-      viewerSiteUrl={createViewerSiteUrl(DEFAULT_LANGUAGE, false)}
+      viewerSiteUrl={createViewerSiteUrl()}
     />
   );
 }

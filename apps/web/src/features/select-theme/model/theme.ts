@@ -7,7 +7,8 @@ export type Theme = (typeof THEMES)[number];
 export const DEFAULT_THEME: Theme = "dark";
 
 export function isTheme(value: string | null): value is Theme {
-  return value !== null && THEMES.some((theme) => theme === value);
+  const themes: readonly (string | null)[] = THEMES;
+  return themes.includes(value);
 }
 
 export function resolveTheme(value: string | null): Theme {

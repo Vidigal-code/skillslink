@@ -134,7 +134,7 @@ const LanguageLink = styled(Link)`
   }
 `;
 
-const LanguageCode = styled.span`
+const LanguageCodeLabel = styled.span`
   color: var(--color-ink-subtle);
   font-family: var(--font-mono);
   font-size: 0.75rem;
@@ -231,7 +231,7 @@ export function LanguageSelector({ language, route }: LanguageSelectorProps) {
               hrefLang={code}
               onClick={(event) => selectLanguage(event, code)}
             >
-              <LanguageCode>{code}</LanguageCode>
+              <LanguageCodeLabel>{code}</LanguageCodeLabel>
               <LanguageName>{dictionary.menu[code]}</LanguageName>
               {code === language ? (
                 <Check aria-hidden="true" size={15} />

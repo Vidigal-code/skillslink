@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ChangeEvent, type FormEvent } from "react";
+import { useState, type ChangeEvent, type SubmitEvent } from "react";
 import { Bot, ExternalLink, FileUp, Link2, ListTree } from "lucide-react";
 import { styled } from "next-yak";
 import { abbreviatePortableUrl } from "@skillslink/link-format";
@@ -380,7 +380,9 @@ export function GenerateDocumentLinkForm({
     }
   }
 
-  async function generateLink(event: FormEvent<HTMLFormElement>) {
+  async function generateLink(
+    event: SubmitEvent<HTMLFormElement>,
+  ): Promise<void> {
     event.preventDefault();
     if (selectedFile === undefined) {
       setError(dictionary.upload.errors.fileRequired);

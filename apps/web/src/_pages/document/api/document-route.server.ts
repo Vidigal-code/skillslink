@@ -25,8 +25,7 @@ export async function getDocumentStaticParams() {
 
 export async function getDocumentRouteData(
   id: string,
-  language: LanguageCode,
-  localized: boolean,
+  language?: LanguageCode,
 ) {
   const snapshot = await getDocumentSnapshot(id);
   if (snapshot === undefined) {
@@ -40,14 +39,13 @@ export async function getDocumentRouteData(
       documentId: id,
       mediaType: snapshot.document.mediaType,
     }),
-    viewerSiteUrl: createViewerSiteUrl(language, localized),
+    viewerSiteUrl: createViewerSiteUrl(language),
   };
 }
 
 export async function createDocumentRouteMetadata(
   id: string,
-  language: LanguageCode,
-  localized: boolean,
+  language?: LanguageCode,
 ): Promise<Metadata> {
   const snapshot = await getDocumentSnapshot(id);
   if (snapshot === undefined) {
@@ -56,10 +54,7 @@ export async function createDocumentRouteMetadata(
 
   const title = snapshot.document.name;
   const description = createDocumentDescription(snapshot.document.content);
-  const canonicalUrl = createCanonicalDocumentUrl(
-    id,
-    localized ? language : undefined,
-  );
+  const canonicalUrl = createCanonicalDocumentUrl(id, language);
   const rawUrl = createRawDocumentUrl({
     siteUrl: SITE_URL,
     documentId: id,

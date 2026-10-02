@@ -26,10 +26,6 @@ export interface RegistryRepository {
   removeLink(documentId: string): Promise<GeneratedLink | undefined>;
 }
 
-export interface Clock {
-  (): Date;
-}
+export type Clock = () => Date;
 
-export interface IdentifierGenerator {
-  (): string;
-}
+export type IdentifierGenerator = () => string;

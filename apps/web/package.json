@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "npm run prepare-content && next build --webpack && node scripts/verify-export.mjs",
+    "build": "npm run prepare-content && next build --webpack && tsx scripts/verify-export.ts",
     "dev": "npm run prepare-content && next dev --webpack",
     "prepare-content": "tsx scripts/prepare-content.ts",
     "test": "vitest run",

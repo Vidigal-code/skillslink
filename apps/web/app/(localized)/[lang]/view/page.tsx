@@ -29,7 +29,7 @@ export default async function Page({ params }: PageProps) {
   return (
     <ViewPage
       language={language}
-      viewerSiteUrl={createViewerSiteUrl(language, true)}
+      viewerSiteUrl={createViewerSiteUrl(language)}
     />
   );
 }

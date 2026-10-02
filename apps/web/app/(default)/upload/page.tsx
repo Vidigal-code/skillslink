@@ -17,7 +17,7 @@ export default function Page() {
     <UploadPage
       language={DEFAULT_LANGUAGE}
       localized={false}
-      viewerSiteUrl={createViewerSiteUrl(DEFAULT_LANGUAGE, false)}
+      viewerSiteUrl={createViewerSiteUrl()}
     />
   );
 }

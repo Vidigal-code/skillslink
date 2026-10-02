@@ -34,6 +34,7 @@ export {
   createRawDocumentUrl,
   createViewerUrl,
   extractDocumentPayloadFromUrl,
+  normalizeBasePath,
   normalizeSiteUrl,
 } from "./urls";
 export {

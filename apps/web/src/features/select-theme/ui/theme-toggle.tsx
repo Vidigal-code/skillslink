@@ -97,14 +97,6 @@ export function ThemeToggle({ language }: ThemeToggleProps) {
     return () => window.removeEventListener("storage", synchronizeTheme);
   }, []);
 
-  function toggleTheme(): void {
-    const currentTheme = resolveTheme(
-      document.documentElement.dataset.theme ?? null,
-    );
-
-    persistTheme(getNextTheme(currentTheme));
-  }
-
   return (
     <Toggle
       type="button"
@@ -118,4 +110,12 @@ export function ThemeToggle({ language }: ThemeToggleProps) {
       </Icon>
     </Toggle>
   );
+}
+
+function toggleTheme(): void {
+  const currentTheme = resolveTheme(
+    document.documentElement.dataset.theme ?? null,
+  );
+
+  persistTheme(getNextTheme(currentTheme));
 }

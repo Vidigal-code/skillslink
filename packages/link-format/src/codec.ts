@@ -225,25 +225,21 @@ function encodeBase64Url(bytes: Uint8Array): string {
 
   for (let offset = 0; offset < bytes.length; offset += BINARY_CHUNK_SIZE) {
     const chunk = bytes.subarray(offset, offset + BINARY_CHUNK_SIZE);
-    binary += String.fromCharCode(...chunk);
+    binary += String.fromCodePoint(...chunk);
   }
 
   return btoa(binary)
     .replaceAll("+", "-")
     .replaceAll("/", "_")
-    .replace(/=+$/u, "");
+    .replaceAll("=", "");
 }
 
 function decodeBase64Url(value: string): Uint8Array {
   const paddingLength = (4 - (value.length % 4)) % 4;
   const base64 =
     value.replaceAll("-", "+").replaceAll("_", "/") + "=".repeat(paddingLength);
-  const binary = atob(base64);
-  const bytes = new Uint8Array(binary.length);
-
-  for (let index = 0; index < binary.length; index += 1) {
-    bytes[index] = binary.charCodeAt(index);
-  }
-
-  return bytes;
+  return Uint8Array.from(
+    atob(base64),
+    (character) => character.codePointAt(0) ?? 0,
+  );
 }

@@ -43,10 +43,30 @@ export type InteractiveCommand =
   | "config"
   | "where";
 
-export function isInteractiveSession(jsonOutput = false): boolean {
-  return (
-    !jsonOutput && process.stdin.isTTY === true && process.stdout.isTTY === true
-  );
+export type RegisteredTargetAction =
+  | "list"
+  | "open"
+  | "copy"
+  | "download"
+  | "remove"
+  | "create a prompt for"
+  | "copy a prompt for";
+
+export interface RegisteredTargetLookup {
+  readonly registry: LinkRegistry;
+  readonly identifier: string | undefined;
+  readonly action: RegisteredTargetAction;
+  readonly interactive: boolean;
+}
+
+export interface ConfirmationPrompt {
+  readonly message: string;
+  readonly cancellationMessage: string;
+  readonly initialValue: boolean;
+}
+
+export function isInteractiveSession(): boolean {
+  return process.stdin.isTTY === true && process.stdout.isTTY === true;
 }
 
 export async function resolveInteractiveCommand(): Promise<
@@ -162,12 +182,12 @@ export async function resolveDestinationDirectory(
   return handleCancellation(result, "Download cancelled.");
 }
 
-export async function resolveRegisteredLink(
-  registry: LinkRegistry,
-  identifier: string | undefined,
-  action: string,
-  interactive: boolean,
-): Promise<RegisteredLinkTarget | undefined> {
+export async function resolveRegisteredLink({
+  registry,
+  identifier,
+  action,
+  interactive,
+}: RegisteredTargetLookup): Promise<RegisteredLinkTarget | undefined> {
   if (identifier !== undefined) {
     return getRegisteredLinkTarget(identifier, registry);
   }
@@ -195,12 +215,12 @@ export async function resolveRegisteredLink(
     : getRegisteredLinkTarget(selectedId, registry);
 }
 
-export async function resolveRegisteredDocument(
-  registry: LinkRegistry,
-  identifier: string | undefined,
-  action: string,
-  interactive: boolean,
-): Promise<GeneratedLink | undefined> {
+export async function resolveRegisteredDocument({
+  registry,
+  identifier,
+  action,
+  interactive,
+}: RegisteredTargetLookup): Promise<GeneratedLink | undefined> {
   if (identifier !== undefined) {
     return getGeneratedLink(identifier, registry);
   }
@@ -228,13 +248,14 @@ export async function resolveRegisteredDocument(
 }
 
 export async function askForConfirmation(
-  message: string,
-  cancellationMessage: string,
-  initialValue: boolean,
+  prompt: ConfirmationPrompt,
 ): Promise<boolean> {
-  const result = await confirm({ message, initialValue });
+  const result = await confirm({
+    message: prompt.message,
+    initialValue: prompt.initialValue,
+  });
   if (isCancel(result)) {
-    cancel(cancellationMessage);
+    cancel(prompt.cancellationMessage);
     return false;
   }
 

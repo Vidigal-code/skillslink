@@ -113,7 +113,7 @@ export function parseLegacyEncodedEnvelope(value: unknown): SharedDocument {
   if (value.v !== 1) {
     throw new LinkFormatError(
       "UNSUPPORTED_VERSION",
-      `Link version ${String(value.v)} is not supported.`,
+      `Link version ${JSON.stringify(value.v)} is not supported.`,
     );
   }
 
@@ -127,7 +127,8 @@ export function parseLegacyEncodedEnvelope(value: unknown): SharedDocument {
 export function isDocumentMediaType(
   value: unknown,
 ): value is DocumentMediaType {
-  return DOCUMENT_MEDIA_TYPES.some((mediaType) => mediaType === value);
+  const mediaTypes: readonly unknown[] = DOCUMENT_MEDIA_TYPES;
+  return mediaTypes.includes(value);
 }
 
 export function getDocumentMediaTypeFromFileName(

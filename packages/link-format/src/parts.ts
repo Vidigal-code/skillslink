@@ -360,7 +360,17 @@ function packUnits(
 }
 
 function splitLines(content: string): readonly string[] {
-  return content.match(/[^\n]*\n|[^\n]+$/gu) ?? [];
+  const lines: string[] = [];
+  let start = 0;
+
+  while (start < content.length) {
+    const lineBreak = content.indexOf("\n", start);
+    const end = lineBreak === -1 ? content.length : lineBreak + 1;
+    lines.push(content.slice(start, end));
+    start = end;
+  }
+
+  return lines;
 }
 
 function getUtf8ByteLength(value: string): number {
