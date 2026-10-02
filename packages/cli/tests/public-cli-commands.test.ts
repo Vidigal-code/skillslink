@@ -1,4 +1,4 @@
-import { access, readFile, writeFile } from "node:fs/promises";
+import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
@@ -557,6 +557,217 @@ describe("public CLI command surface", () => {
       await readFile(fixture.registryPath, "utf8"),
     ) as StoredRegistry;
     expect(registry.links).toEqual([]);
+  });
+
+  it("opens a generated URL and registers it after terminal confirmation", async () => {
+    const directory = await createTemporaryDirectory();
+    directories.push(directory);
+    const openUrl = vi.fn(async () => undefined);
+    const services = createServices({ openUrl });
+    const sourcePath = join(directory, "guide.md");
+    const registryPath = join(directory, "registry.json");
+    await writeFile(sourcePath, "# Guide\n\nOpened from a terminal.", "utf8");
+    promptMocks.confirm.mockResolvedValueOnce(true);
+    const generation = createOutput();
+
+    await withTerminalMode(true, () =>
+      createProgram(generation.output, services).parseAsync([
+        "node",
+        "skillslink",
+        "--store",
+        registryPath,
+        "generate",
+        sourcePath,
+      ]),
+    );
+
+    const registry = JSON.parse(
+      await readFile(registryPath, "utf8"),
+    ) as StoredRegistry;
+    expect(registry.links).toHaveLength(1);
+    expect(openUrl).toHaveBeenCalledExactlyOnceWith(registry.links[0]?.url);
+    expect(promptMocks.confirm).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({
+        message: "Register this link with its file name and creation time?",
+        initialValue: true,
+      }),
+    );
+    expect(generation.messages).toContain(`Registered in ${registryPath}`);
+  });
+
+  it.each([
+    {
+      failure: new Error("No default browser is available."),
+      message: "No default browser is available.",
+    },
+    { failure: "offline", message: "Could not open the generated URL." },
+  ])(
+    "reports '$message' when a generated URL cannot be opened",
+    async ({ failure, message }) => {
+      const directory = await createTemporaryDirectory();
+      directories.push(directory);
+      const openUrl = vi
+        .fn<(url: string) => Promise<void>>()
+        .mockRejectedValue(failure);
+      const services = createServices({ openUrl });
+      const sourcePath = join(directory, "guide.md");
+      await writeFile(sourcePath, "# Guide\n\nNo browser here.", "utf8");
+      promptMocks.confirm.mockResolvedValueOnce(false);
+      const generation = createOutput();
+
+      await withTerminalMode(true, () =>
+        createProgram(generation.output, services).parseAsync([
+          "node",
+          "skillslink",
+          "--store",
+          join(directory, "registry.json"),
+          "generate",
+          sourcePath,
+        ]),
+      );
+
+      expect(openUrl).toHaveBeenCalledOnce();
+      expect(generation.errors).toEqual([message]);
+      expect(generation.messages.join("\n")).not.toContain("Registered in");
+    },
+  );
+
+  it("stops generation when the terminal file prompt is cancelled", async () => {
+    const directory = await createTemporaryDirectory();
+    directories.push(directory);
+    promptMocks.path.mockResolvedValueOnce(Symbol("cancelled"));
+    const generation = createOutput();
+
+    await withTerminalMode(true, () =>
+      createProgram(generation.output, createServices()).parseAsync([
+        "node",
+        "skillslink",
+        "--store",
+        join(directory, "registry.json"),
+        "generate",
+      ]),
+    );
+
+    expect(promptMocks.cancel).toHaveBeenCalledExactlyOnceWith(
+      "Link generation cancelled.",
+    );
+    expect(generation.messages).toEqual([]);
+  });
+
+  it("opens nothing when the terminal link selection is cancelled", async () => {
+    const directory = await createTemporaryDirectory();
+    directories.push(directory);
+    const openUrl = vi.fn(async () => undefined);
+    const services = createServices({ openUrl });
+    const fixture = await registerGuide(directory, services);
+    promptMocks.select.mockResolvedValueOnce(Symbol("cancelled"));
+    const openOutput = createOutput();
+
+    await withTerminalMode(true, () =>
+      createProgram(openOutput.output, services).parseAsync([
+        ...fixture.argumentsPrefix,
+        "open",
+      ]),
+    );
+
+    expect(promptMocks.cancel).toHaveBeenCalledExactlyOnceWith(
+      "Command cancelled.",
+    );
+    expect(openUrl).not.toHaveBeenCalled();
+    expect(openOutput.messages).toEqual([]);
+  });
+
+  it("downloads nothing when the terminal directory prompt is cancelled", async () => {
+    const directory = await createTemporaryDirectory();
+    directories.push(directory);
+    const services = createServices();
+    const fixture = await registerGuide(directory, services);
+    promptMocks.path.mockResolvedValueOnce(Symbol("cancelled"));
+    const downloadOutput = createOutput();
+
+    await withTerminalMode(true, () =>
+      createProgram(downloadOutput.output, services).parseAsync([
+        ...fixture.argumentsPrefix,
+        "download",
+        fixture.link.id,
+      ]),
+    );
+
+    expect(promptMocks.cancel).toHaveBeenCalledExactlyOnceWith(
+      "Download cancelled.",
+    );
+    expect(downloadOutput.messages).toEqual([]);
+  });
+
+  it.each([
+    { confirmed: true, expected: "replaces" },
+    { confirmed: false, expected: "keeps" },
+  ])(
+    "$expected an existing download when the terminal answer is $confirmed",
+    async ({ confirmed }) => {
+      const directory = await createTemporaryDirectory();
+      directories.push(directory);
+      const services = createServices();
+      const fixture = await registerGuide(directory, services);
+      const destinationDirectory = join(directory, "existing-download");
+      const destinationPath = join(destinationDirectory, "guide.md");
+      await mkdir(destinationDirectory, { recursive: true });
+      await writeFile(destinationPath, "stale", "utf8");
+      promptMocks.confirm.mockResolvedValueOnce(confirmed);
+      const downloadOutput = createOutput();
+
+      await withTerminalMode(true, () =>
+        createProgram(downloadOutput.output, services).parseAsync([
+          ...fixture.argumentsPrefix,
+          "download",
+          fixture.link.id,
+          "--directory",
+          destinationDirectory,
+        ]),
+      );
+
+      expect(promptMocks.confirm).toHaveBeenCalledExactlyOnceWith(
+        expect.objectContaining({
+          message: `${destinationPath} already exists. Replace it?`,
+          initialValue: false,
+        }),
+      );
+      await expect(readFile(destinationPath, "utf8")).resolves.toBe(
+        confirmed ? fixture.content : "stale",
+      );
+      expect(downloadOutput.messages).toEqual(
+        confirmed ? [`Saved: ${destinationPath}`] : [],
+      );
+    },
+  );
+
+  it("keeps a registered document when terminal removal is declined", async () => {
+    const directory = await createTemporaryDirectory();
+    directories.push(directory);
+    const services = createServices();
+    const fixture = await registerGuide(directory, services);
+    promptMocks.confirm.mockResolvedValueOnce(false);
+    const removeOutput = createOutput();
+
+    await withTerminalMode(true, () =>
+      createProgram(removeOutput.output, services).parseAsync([
+        ...fixture.argumentsPrefix,
+        "remove",
+        fixture.link.id,
+      ]),
+    );
+
+    expect(promptMocks.confirm).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({
+        message: `Remove ${fixture.link.name} (${fixture.link.id}) from the registry?`,
+        initialValue: false,
+      }),
+    );
+    expect(removeOutput.messages).toEqual(["Removal skipped."]);
+    const registry = JSON.parse(
+      await readFile(fixture.registryPath, "utf8"),
+    ) as StoredRegistry;
+    expect(registry.links).toHaveLength(1);
   });
 
   it("updates and prints persistent configuration", async () => {
