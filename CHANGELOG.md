@@ -18,6 +18,10 @@ All notable changes to SkillsLink are documented in this file. The project follo
 - Line splitting, Base64URL padding removal, and base path normalization run in linear time instead of using backtracking regular expressions.
 - The static export check normalizes `NEXT_PUBLIC_BASE_PATH` before verifying asset paths, so values with trailing slashes are accepted.
 
+### Security
+
+- Next.js `^16.3.8` and the patched `brace-expansion` releases resolve the `next/og` remote code execution and brace expansion denial-of-service advisories.
+
 ## [1.0.0] - 2026-09-06
 
 ### Added
