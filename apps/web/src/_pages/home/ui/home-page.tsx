@@ -19,6 +19,7 @@ import {
   CopyTextButton,
   PageContainer,
   PageFooter,
+  ParallaxLayer,
   SiteLogo,
 } from "@/shared/ui";
 import { SiteHeader } from "@/widgets/site-header";
@@ -32,47 +33,48 @@ const Hero = styled.section`
   position: relative;
   isolation: isolate;
   padding: clamp(5rem, 10vw, 8rem) 0 clamp(4rem, 8vw, 6rem);
+`;
 
-  &::before {
-    position: absolute;
-    z-index: -1;
-    inset: -12rem -12rem auto auto;
-    width: min(78vw, 62rem);
-    height: 42rem;
-    background:
-      radial-gradient(
-        circle at 18% 52%,
-        var(--color-brand-cyan-glow),
-        transparent 31%
-      ),
-      radial-gradient(
-        circle at 45% 38%,
-        var(--color-brand-purple-glow),
-        transparent 30%
-      ),
-      radial-gradient(
-        circle at 68% 60%,
-        var(--color-brand-violet-glow),
-        transparent 28%
-      ),
-      radial-gradient(
-        circle at 88% 42%,
-        var(--color-brand-indigo-glow),
-        transparent 28%
-      );
-    filter: blur(3.5rem);
-    content: "";
-    opacity: 0.7;
-    pointer-events: none;
-  }
+const HeroBackdrop = styled(ParallaxLayer)`
+  position: absolute;
+  z-index: -1;
+  inset: -12rem -12rem auto auto;
+  width: min(78vw, 62rem);
+  height: 42rem;
+  background:
+    radial-gradient(
+      circle at 18% 52%,
+      var(--color-brand-cyan-glow),
+      transparent 31%
+    ),
+    radial-gradient(
+      circle at 45% 38%,
+      var(--color-brand-purple-glow),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 68% 60%,
+      var(--color-brand-violet-glow),
+      transparent 28%
+    ),
+    radial-gradient(
+      circle at 88% 42%,
+      var(--color-brand-indigo-glow),
+      transparent 28%
+    );
+  filter: blur(3.5rem);
+  opacity: 0.7;
+  pointer-events: none;
 
   @media (max-width: ${breakpoints.tablet}) {
-    &::before {
-      inset: -10rem 50% auto auto;
-      width: 56rem;
-      transform: translateX(50%);
-    }
+    inset: -10rem auto auto 50%;
+    width: 56rem;
+    margin-inline-start: -28rem;
   }
+`;
+
+const TerminalLayer = styled(ParallaxLayer)`
+  min-width: 0;
 `;
 
 const HeroLayout = styled.div`
@@ -505,6 +507,7 @@ export function HomePage({ language, localized = true }: HomePageProps) {
       <SiteHeader language={language} route="" localized={localized} />
       <Main>
         <Hero>
+          <HeroBackdrop depth="backdrop" />
           <PageContainer>
             <HeroLayout>
               <div>
@@ -530,26 +533,28 @@ export function HomePage({ language, localized = true }: HomePageProps) {
                   <InstallCode>{INSTALL_COMMAND}</InstallCode>
                 </HeroActions>
               </div>
-              <TerminalCard aria-label={dictionary.home.terminalLabel}>
-                <TerminalChrome aria-hidden="true">
-                  <span />
-                  <span />
-                  <span />
-                </TerminalChrome>
-                <TerminalBody>
-                  <CommandLine>
-                    <span>$</span> {GENERATE_COMMAND}
-                  </CommandLine>
-                  {terminalLines.map((line, index) => {
-                    const Icon = resultIcons[index] ?? FileText;
-                    return (
-                      <ResultLine key={line}>
-                        <Icon aria-hidden="true" size={15} /> {line}
-                      </ResultLine>
-                    );
-                  })}
-                </TerminalBody>
-              </TerminalCard>
+              <TerminalLayer depth="floating">
+                <TerminalCard aria-label={dictionary.home.terminalLabel}>
+                  <TerminalChrome aria-hidden="true">
+                    <span />
+                    <span />
+                    <span />
+                  </TerminalChrome>
+                  <TerminalBody>
+                    <CommandLine>
+                      <span>$</span> {GENERATE_COMMAND}
+                    </CommandLine>
+                    {terminalLines.map((line, index) => {
+                      const Icon = resultIcons[index] ?? FileText;
+                      return (
+                        <ResultLine key={line}>
+                          <Icon aria-hidden="true" size={15} /> {line}
+                        </ResultLine>
+                      );
+                    })}
+                  </TerminalBody>
+                </TerminalCard>
+              </TerminalLayer>
             </HeroLayout>
           </PageContainer>
         </Hero>
@@ -584,20 +589,22 @@ export function HomePage({ language, localized = true }: HomePageProps) {
               </div>
               <SectionLead>{dictionary.home.resilienceLead}</SectionLead>
             </SectionHeader>
-            <FeatureGrid>
-              {dictionary.home.features.map((feature, index) => {
-                const Icon = featureIcons[index] ?? FileText;
-                return (
-                  <FeatureCard key={feature.title}>
-                    <FeatureIcon>
-                      <Icon aria-hidden="true" size={21} />
-                    </FeatureIcon>
-                    <FeatureTitle>{feature.title}</FeatureTitle>
-                    <FeatureText>{feature.text}</FeatureText>
-                  </FeatureCard>
-                );
-              })}
-            </FeatureGrid>
+            <ParallaxLayer depth="raised">
+              <FeatureGrid>
+                {dictionary.home.features.map((feature, index) => {
+                  const Icon = featureIcons[index] ?? FileText;
+                  return (
+                    <FeatureCard key={feature.title}>
+                      <FeatureIcon>
+                        <Icon aria-hidden="true" size={21} />
+                      </FeatureIcon>
+                      <FeatureTitle>{feature.title}</FeatureTitle>
+                      <FeatureText>{feature.text}</FeatureText>
+                    </FeatureCard>
+                  );
+                })}
+              </FeatureGrid>
+            </ParallaxLayer>
           </PageContainer>
         </Section>
 
@@ -609,15 +616,19 @@ export function HomePage({ language, localized = true }: HomePageProps) {
                 <SectionTitle>{dictionary.home.flowTitle}</SectionTitle>
               </div>
             </SectionHeader>
-            <Steps>
-              {dictionary.home.steps.map((step, index) => (
-                <Step key={step.title}>
-                  <StepNumber>{String(index + 1).padStart(2, "0")}</StepNumber>
-                  <StepTitle>{step.title}</StepTitle>
-                  <StepText>{includeDocumentSizeLimit(step.text)}</StepText>
-                </Step>
-              ))}
-            </Steps>
+            <ParallaxLayer depth="raised">
+              <Steps>
+                {dictionary.home.steps.map((step, index) => (
+                  <Step key={step.title}>
+                    <StepNumber>
+                      {String(index + 1).padStart(2, "0")}
+                    </StepNumber>
+                    <StepTitle>{step.title}</StepTitle>
+                    <StepText>{includeDocumentSizeLimit(step.text)}</StepText>
+                  </Step>
+                ))}
+              </Steps>
+            </ParallaxLayer>
           </PageContainer>
         </Section>
 
