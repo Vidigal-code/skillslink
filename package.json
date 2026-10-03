@@ -1,6 +1,6 @@
 {
   "name": "skillslink-workspace",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "private": true,
   "description": "CLI and GitHub Pages viewer for AI-readable Markdown links.",
   "workspaces": [
